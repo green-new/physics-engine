@@ -22,14 +22,14 @@ const uint16_t height = 1080;
 double mouseLastX, mouseLastY;
 
 texture_t NOISE_TEXTURE;
-const std::vector<vertex_t> basic_verts = {
+std::vector<vertex_t> basic_verts = {
     // X, y, z, normX, normY, normZ, texU, texV (ST)
-    {   1.0f, 1.0f, 0.0f,      1.0f, 0.0f, 0.0f,   1.0f, 1.0f   },
-    {   1.0f, -1.0f, 0.0f,     1.0f, 0.0f, 0.0f,   1.0f, 1.0f   },
-    {   -1.0f, -1.0f, 0.0f,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f   },
-    {   -1.0f, 1.0f, 0.0f,     1.0f, 0.0f, 0.0f,   0.0f, 1.0f   }
+    {   1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f   },
+    {   1.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f   },
+    {  -1.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f   },
+    {  -1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f   }
 };
-const std::vector<GLuint> indices = { 0, 1, 2, 2, 3, 0 };
+const std::vector<GLuint> indices = { 0, 1, 3, 1, 2, 3 };
 mesh* text;
 shader* basic_prog;
 cam* camera;
@@ -75,14 +75,12 @@ void start() {
     glfwSetCursorPosCallback(game_window->get_handle(), mouse_callback);
 
     /* Create entities, load models, meshes, and textures */
-    
+    NOISE_TEXTURE = noise_texture(RED, 256, 256, 1.0f, 8, 4210481);
     text = new mesh(basic_verts, indices, { NOISE_TEXTURE });
     basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
-    camera = new cam(glm::vec3(0.0f, 0.0f, 0.0f));
-    GLuint tx;
-    glGenTextures(1, &tx);
-    std::cout << "Random texture: " << tx << std::endl;
-    NOISE_TEXTURE = build_texture("flat_1.png");
+    camera = new cam(glm::vec3(0.0f, 0.0f, 0.0f)); 
+    
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 void run() {
@@ -100,7 +98,6 @@ void run() {
 
     basic_prog->use();
     basic_prog->set_int("texture1", 0);
-    glUniform1i(glGetUniformLocation(basic_prog->id, "texture1"), 0);
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(game_window->get_handle())) {
         frames++;
