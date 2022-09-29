@@ -21,7 +21,7 @@ const uint16_t width = 1920;
 const uint16_t height = 1080;
 double mouseLastX, mouseLastY;
 
-texture_t NOISE_TEXTURE;
+texture_t txt_noise_red, txt_noise_green, txt_noise_blue, txt_red, txt_green, txt_blue, txt_xor_red, txt_xor_green, txt_xor_blue, txt_flat1;
 std::vector<vertex_t> basic_verts = {
     // X, y, z, normX, normY, normZ, texU, texV (ST)
     {   1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f   },
@@ -30,7 +30,7 @@ std::vector<vertex_t> basic_verts = {
     {  -1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f   }
 };
 const std::vector<GLuint> indices = { 0, 1, 3, 1, 2, 3 };
-mesh* text;
+mesh* text, *cube;
 shader* basic_prog;
 cam* camera;
 
@@ -58,8 +58,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 void destroy() {
     delete text;
+    delete cube;
     delete basic_prog;
     delete camera;
+
     glfwDestroyWindow(game_window->get_handle());
     glfwTerminate();
     exit(0);
@@ -75,12 +77,34 @@ void start() {
     glfwSetCursorPosCallback(game_window->get_handle(), mouse_callback);
 
     /* Create entities, load models, meshes, and textures */
-    NOISE_TEXTURE = noise_texture(RED, 256, 256, 1.0f, 8, 4210481);
-    text = new mesh(basic_verts, indices, { NOISE_TEXTURE });
+    /* Generate textures */
+    uint32_t seed = 8129375492;
+    txt_noise_red = noise_texture(RED, 64, 64, 1.0f, 8, seed); 
+    txt_noise_green = noise_texture(GREEN, 64, 64, 1.0f, 8, seed);
+    txt_noise_blue = noise_texture(BLUE, 64, 64, 1.0f, 8, seed);
+    txt_red = solid_colored_texture(RED);
+    txt_green = solid_colored_texture(GREEN);
+    txt_blue = solid_colored_texture(BLUE);
+    txt_xor_red = xor_texture(RED, 256, 256);
+    txt_xor_green = xor_texture(GREEN, 256, 256);
+    txt_xor_blue = xor_texture(BLUE, 256, 256);
+    txt_flat1 = build_texture("flat_1.png");
+
+    /* Generate meshes */
+    text = new mesh(basic_verts, indices, { txt_blue });
+    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_blue });
+
+    /* Allocate shader program */
     basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
+
+    /* Allocate memory for camera */
     camera = new cam(glm::vec3(0.0f, 0.0f, 0.0f)); 
     
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // Wireframe mode
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    // Depth buffering (3D)
+    glEnable(GL_DEPTH_TEST);
 }
 
 void run() {
@@ -120,6 +144,7 @@ void run() {
             renderTime = currTime;
             glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            
 
             // view/projection transformations 
             // ===
@@ -133,7 +158,8 @@ void run() {
             basic_prog->set_mat4("model", model);
             basic_prog->set_mat4("view", view);
             basic_prog->set_mat4("projection", projection);
-            text->draw(*basic_prog);
+            cube->draw(*basic_prog);
+            // text->draw(*basic_prog);
 
             /* Update render system */
             // render_system->update();

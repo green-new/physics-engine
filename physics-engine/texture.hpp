@@ -21,9 +21,12 @@ union {
 	} rgba;
 };
 
-const color_t RED = { 0xFF0000FF };
-const color_t GREEN = { 0x00FF00FF };
-const color_t BLUE = { 0x0000FFFF };
+const color_t RED =		{	0xFF0000FF	};
+const color_t GREEN =	{	0xFF00FF00	};
+const color_t BLUE =	{	0xFFFF0000	};
+
+color_t build_color(float r, float g, float b, float a);
+color_t build_color(byte r, byte g, byte b, byte a);
 
 texture_t xor_texture(color_t base, uint16_t width, uint16_t height);
 texture_t solid_colored_texture(color_t color);

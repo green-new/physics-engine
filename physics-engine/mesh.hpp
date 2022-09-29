@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <numbers>
+#include <bits/stdc++.h>
 #include "glad/glad.h"
 
 #include "shader.hpp"
@@ -38,7 +40,7 @@ public:
 	void const draw(shader& prog);
 };
 
-const mesh torus_mesh();
-const mesh cylinder_mesh();
-const mesh sphere_mesh();
-const mesh platonic_mesh(PlatonicSolid type);
+mesh* torus_mesh();
+mesh* cylinder_mesh();
+mesh* sphere_mesh();
+mesh* platonic_mesh(PlatonicSolid type, std::vector<texture_t> textures);

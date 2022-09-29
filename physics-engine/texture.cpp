@@ -25,17 +25,10 @@ GLuint noise_texture(color_t base, uint16_t width, uint16_t height, double frequ
 	for (uint16_t i = 0; i < height; i++)
 		for (uint16_t j = 0; j < width; j++) {
 			double d = perlin.octave2D_01(j * fx, i * fx, octave);
-			data[(i * width + j) * Cn + 0] = d * base.rgba.red;
-			data[(i * width + j) * Cn + 1] = d * base.rgba.green;
-			data[(i * width + j) * Cn + 2] = d * base.rgba.blue;
+			data[(i * width + j) * Cn + 0] = base.rgba.red / 255.0f * d;
+			data[(i * width + j) * Cn + 1] = base.rgba.green / 255.0f * d;
+			data[(i * width + j) * Cn + 2] = base.rgba.blue / 255.0f * d;
 			data[(i * width + j) * Cn + 3] = 1.0f;
-			/*byte red = (byte)(base.rgba.red * d);
-			byte green = (byte)(base.rgba.green * d);
-			byte blue = (byte)(base.rgba.blue * d);
-			data[(i * height) + j + 0] = red;
-			data[(i * height) + j + 1] = green;
-			data[(i * height) + j + 2] = blue;
-			data[(i * height) + j + 3] = base.rgba.alpha;*/
 		}
 
 	GLuint id;
@@ -94,14 +87,13 @@ texture_t solid_colored_texture(color_t color) {
 	texture_t id;
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_2D, id);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, new unsigned char[] {color.rgba.red, color.rgba.blue, color.rgba.green, color.rgba.alpha});
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, new unsigned char[] {color.rgba.red, color.rgba.green, color.rgba.blue, color.rgba.alpha});
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	return id;
@@ -146,4 +138,22 @@ texture_t build_texture(std::string filename) {
 	stbi_image_free(data);
 
 	return id;
+}
+
+color_t build_color(byte r, byte g, byte b, byte a) {
+	uint32_t c = r;
+	c = (c << 8) + g;
+	c = (c << 8) + b;
+	c = (c << 8) + a;
+
+	return { c };
+}
+
+color_t build_color(float r, float g, float b, float a) {
+	byte _r = (byte)(r * 255.0f);
+	byte _g = (byte)(g * 255.0f);
+	byte _b = (byte)(b * 255.0f);
+	byte _a = (byte)(a * 255.0f);
+	
+	return build_color(_r, _g, _b, _a);
 }
