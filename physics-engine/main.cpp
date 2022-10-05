@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+
 #include <iostream>
 #include <sstream>
 #include <format>
@@ -78,7 +81,7 @@ void start() {
 
     /* Create entities, load models, meshes, and textures */
     /* Generate textures */
-    uint32_t seed = 8129375492;
+    uint32_t seed = 81293754;
     txt_noise_red = noise_texture(RED, 64, 64, 1.0f, 8, seed); 
     txt_noise_green = noise_texture(GREEN, 64, 64, 1.0f, 8, seed);
     txt_noise_blue = noise_texture(BLUE, 64, 64, 1.0f, 8, seed);
@@ -92,7 +95,7 @@ void start() {
 
     /* Generate meshes */
     text = new mesh(basic_verts, indices, { txt_blue });
-    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_blue });
+    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_green });
 
     /* Allocate shader program */
     basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
@@ -142,17 +145,17 @@ void run() {
         renderTick = (currTime - renderTime > 1.0f / RENDER_FREQ);
         if (renderTick) {
             renderTime = currTime;
-            glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
-
             // view/projection transformations 
             // ===
-            glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
+            glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)width / (float)height, 0.1f, 1000.0f);
             glm::mat4 model = glm::mat4(1.0f);
             glm::mat4 view = glm::mat4(1.0f);
-            view = glm::translate(view, glm::vec3(-1.0f, 1.0f, -3.0f));
-            model = glm::rotate(model, (float)currTime, glm::vec3(1.0f, 1.0f, 0.0f));
+            view = glm::translate(view, glm::vec3(-1.0f, 1.0f, -10.0f));
+            model = glm::translate(model, glm::vec3((float)currTime, 0.0f, 0.0f));
+            model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 0.0f));
 
             basic_prog->use();
             basic_prog->set_mat4("model", model);

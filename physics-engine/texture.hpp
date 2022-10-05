@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Reputeless/PerlinNoise.hpp"
 #include "glad/glad.h"
 #include <string>

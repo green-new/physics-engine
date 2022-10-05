@@ -1,7 +1,6 @@
 #include "texture.hpp"
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
+
 
 /* Consider this paper for implementation:
 https://redirect.cs.umbc.edu/~olano/s2002c36/ch06.pdf 

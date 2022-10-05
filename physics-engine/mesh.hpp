@@ -2,9 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <numbers>
-#include <bits/stdc++.h>
 #include "glad/glad.h"
-
 #include "shader.hpp"
 #include "texture.hpp"
 
@@ -25,6 +23,10 @@ struct {
 };
 
 class mesh {
+public:
+	mesh(std::vector<vertex_t> _verts, std::vector<GLuint> _indices, std::vector<texture_t> _textures);
+	~mesh();
+	void const draw(shader& prog);
 private:
 	std::vector<vertex_t> verts;
 	std::vector<GLuint> indices;
@@ -34,13 +36,6 @@ private:
 	GLuint ebo;
 
 	void setup();
-public:
-	mesh(std::vector<vertex_t> _verts, std::vector<GLuint> _indices, std::vector<texture_t> _textures);
-	~mesh();
-	void const draw(shader& prog);
 };
 
-mesh* torus_mesh();
-mesh* cylinder_mesh();
-mesh* sphere_mesh();
 mesh* platonic_mesh(PlatonicSolid type, std::vector<texture_t> textures);
