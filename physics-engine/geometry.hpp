@@ -1,90 +1,61 @@
 #pragma once
 #include <string>
+#include <map>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace geolib {
-
-	class vertex {
-	public:
-		vertex();
-		~vertex();
-
+	struct vertex {
 		glm::vec3 position;
 		glm::vec3 normal;
-		halfedge* leaving;
-
-		friend class geometry;
+		struct vertex* next;
+		struct vertex* prev;
 	};
-
-	class face {
-	public:
-		face();
-		~face();
-
-		void update_normal();
-		void update_vertex_normals() const;
-		int get_edge_count();
-
+	struct face {
+		glm::ivec3 indices;
 		glm::vec3 normal;
-		halfedge* inner;
-
-		friend class geometry;
+		struct face* next;
+		struct face* prev;
 	};
-
-	class halfedge {
-	public:
-		halfedge();
-		~halfedge();
-
-		vertex* origin;
-		face* incident;
-		halfedge* twin;
-		halfedge* next;
-
-		halfedge* get_prev();
-
-		friend class geometry;
-	};
-
 	class geometry {
 	public:
 		geometry();
 		~geometry();
 
-		void create_from_off(std::string filename);
-		void create_from_obj(std::string filename);
+		unsigned int get_face_count();
+		unsigned int get_vertex_count();
 
-		void create_face(vertex* v, unsigned int vs);
+		void add_vertex(vertex* v);
+		void add_face(face* f);
 
-		void add(vertex* v);
-		void add(halfedge* edge);
-		void add(face* f);
+		void remove_vertex(vertex* v);
+		void remove_face(face* face);
 
-		void remove(vertex* v);
-		void remove(halfedge* edge);
-		void remove(face* f);
+		void build_face_triangle(vertex v0, vertex v1, vertex v2);
+		void build_face_quad(vertex v0, vertex v1, vertex v2, vertex v3);
+		void build_face_polygon(vertex* vxs, unsigned int vs);
 
-		void update_normals();
+		void update_face_normals();
 		void update_vertex_normals();
 
-		bool is_empty();
-		bool is_manifold();
-		void clear();
-	private:
-		/* Triangulation creates new faces and new edges. */
-		void triangulate(face* face);
+		std::vector<GLfloat> get_vertex_data();
+		std::vector<GLuint> get_face_data();
 
-		vertex* vertexlist;
-		halfedge* edgelist;
-		face* facelist;
+		bool is_empty() const;
+
+	private:
+		vertex* vertex_data;
+		face* face_data;
 
 		unsigned int n_vertices;
-		unsigned int n_edges;
 		unsigned int n_faces;
-
-		/* If this value is bound, it is the boundary of the plane. */
-		inline const static face* infinity = nullptr;
 	};
+
+	void get_geometry_from_obj(std::string filename, geometry& g);
 }

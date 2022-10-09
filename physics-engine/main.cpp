@@ -12,7 +12,6 @@
 #include "window.hpp"
 #include "texture.hpp"
 #include "mesh.hpp"
-#include "camera.hpp"
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods);
 void reshape_callback(GLFWwindow* handle, int width, int height);
@@ -35,7 +34,6 @@ std::vector<vertex_t> basic_verts = {
 const std::vector<GLuint> indices = { 0, 1, 3, 1, 2, 3 };
 mesh* text, *cube;
 shader* basic_prog;
-cam* camera;
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods) {
     if (action == GLFW_PRESS)
@@ -63,7 +61,6 @@ void destroy() {
     delete text;
     delete cube;
     delete basic_prog;
-    delete camera;
 
     glfwDestroyWindow(game_window->get_handle());
     glfwTerminate();
@@ -95,13 +92,10 @@ void start() {
 
     /* Generate meshes */
     text = new mesh(basic_verts, indices, { txt_blue });
-    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_green });
+    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_red });
 
     /* Allocate shader program */
     basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
-
-    /* Allocate memory for camera */
-    camera = new cam(glm::vec3(0.0f, 0.0f, 0.0f)); 
     
     // Wireframe mode
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -110,9 +104,18 @@ void start() {
     glEnable(GL_DEPTH_TEST);
 }
 
+void test_geometry() {
+    geolib::geometry* g = new geolib::geometry;
+    geolib::get_geometry_from_obj("models/dodecahedron.obj", *g);
+ 
+    std::cout << "Faces: " << g->get_face_count() << "\nVertices: " << g->get_vertex_count();
+    std::vector vertexData = g->get_vertex_data();
+    std::vector faceData = g->get_face_data();
+}
+
 void run() {
     const float PHYS_FREQ = 500.0f; // 500 Hz
-    const float RENDER_FREQ = 1000.0f;  // 1000 Hz
+    const float RENDER_FREQ = 2000.0f;  // 1000 Hz
     double       deltaTime = 0.0f,
         prevTime = glfwGetTime(),
         currTime = 0.0f,
@@ -122,6 +125,23 @@ void run() {
     bool        renderTick = false, 
                 physTick = false;
     unsigned int frames = 0;
+
+    const unsigned int n_cubes = 10;
+    glm::vec3 positions[n_cubes] = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(-4.5f, 1.0f, 0.5f),
+        glm::vec3(2.3f, 0.4f, -3.4f),
+        glm::vec3(6.3f, 9.4f, 3.0f),
+        glm::vec3(1.3f, 4.5f, -4.4f),
+        glm::vec3(8.9f, 0.3f, 5.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(-1.0f, -6.0f, 2.0f),
+        glm::vec3(-3.1f, 2.0f, 0.0f),
+        glm::vec3(-5.0f, -3.0f, 1.4f)
+    };
+
+    /* Geometry testing */
+    test_geometry();
 
     basic_prog->use();
     basic_prog->set_int("texture1", 0);
@@ -150,18 +170,20 @@ void run() {
             
             // view/projection transformations 
             // ===
-            glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)width / (float)height, 0.1f, 1000.0f);
-            glm::mat4 model = glm::mat4(1.0f);
+            glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
             glm::mat4 view = glm::mat4(1.0f);
-            view = glm::translate(view, glm::vec3(-1.0f, 1.0f, -10.0f));
-            model = glm::translate(model, glm::vec3((float)currTime, 0.0f, 0.0f));
-            model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 0.0f));
-
-            basic_prog->use();
-            basic_prog->set_mat4("model", model);
+            view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
             basic_prog->set_mat4("view", view);
             basic_prog->set_mat4("projection", projection);
-            cube->draw(*basic_prog);
+            for (unsigned int i = 0; i < n_cubes; i++) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, positions[i]);
+                model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 1.0f));
+
+                basic_prog->use();
+                basic_prog->set_mat4("model", model);
+                cube->draw(*basic_prog);
+            }
             // text->draw(*basic_prog);
 
             /* Update render system */

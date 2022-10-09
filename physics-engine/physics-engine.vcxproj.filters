@@ -77,11 +77,11 @@
     <ClInclude Include="texture.hpp">
       <Filter>Header Files\render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\camera.hpp">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="geometry.hpp">
       <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.hpp">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

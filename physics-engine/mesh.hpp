@@ -5,6 +5,7 @@
 #include "glad/glad.h"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "geometry.hpp"
 
 using PlatonicSolid =
 enum {
