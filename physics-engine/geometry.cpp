@@ -4,9 +4,11 @@ namespace geolib {
 	geometry::geometry() : vertex_data(nullptr), face_data(nullptr), n_vertices(0), n_faces(0) { 
 		
 	}
+	geometry::geometry(std::string filename) {
+		get_geometry_from_obj(filename);
+	}
 	geometry::~geometry() { }
 
-	/* Adds to the end of the list. */
 	void geometry::add_vertex(vertex* v) {
 		if (v) {
 			if (!vertex_data) {
@@ -96,47 +98,35 @@ namespace geolib {
 	unsigned int geometry::get_vertex_count() {
 		return n_vertices;
 	}
-	std::vector<GLfloat> geometry::get_vertex_data() {
-		std::vector<GLfloat> data;
-		for (vertex* current = vertex_data; current != nullptr; current = current->next) {
-			data.push_back((GLfloat)current->position.x);
-			data.push_back((GLfloat)current->position.y);
-			data.push_back((GLfloat)current->position.z);
-		}
-		return data;
-	}
-	std::vector<GLuint> geometry::get_face_data() {
-		std::vector<GLuint> data;
-		for (face* current = face_data; current != nullptr; current = current->next) {
-			data.push_back((GLuint)current->indices[0]);
-			data.push_back((GLuint)current->indices[1]);
-			data.push_back((GLuint)current->indices[2]);
-		}
-		return data;
-	}
 
-	void get_geometry_from_obj(std::string filename, geometry& g) {
+	/*
+	* https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
+	*/
+	void geometry::get_geometry_from_obj(std::string filename) {
 		using namespace std;
 		enum Entry {
 			VERTEX,
+			VERTEX_TEXTURES,
 			VERTEX_NORMALS,
 			FACE
 		};
 		static const std::map<std::string, Entry> map = {
 			{"v", VERTEX},
+			{"vt", VERTEX_TEXTURES},
 			{"vn", VERTEX_NORMALS},
 			{"f", FACE}
 		};
 		ifstream f(filename);
 		unsigned int vIndex = 0;
+		unsigned int vtIndex = 0;
 		unsigned int vnIndex = 0;
 		unsigned int fIndex = 0;
 
 		vector<vertex*> tmpVertices;
 
 		/* If not .obj or not opened, get out! */
-		if (filename.substr(filename.find_last_of(".") + 1) != "obj") return;
-		if (!f.is_open()) return;
+		if (filename.substr(filename.find_last_of(".") + 1) != "obj") throw std::logic_error("Error reading OBJ file: file was not .OBJ file type");
+		if (!f.is_open()) throw std::runtime_error("Error reading OBJ file: file could not be opened");
 
 		string line = "";
 		while (getline(f, line)) {
@@ -162,26 +152,50 @@ namespace geolib {
 						z0 = stof(element);
 					}
 					catch (std::invalid_argument) {
-						cerr << "Error converting OBJ file: invalid argument, datatype, element, or value for [" << element << "].\n" << endl;
-						return;
+						throw std::invalid_argument("Error converting OBJ file: invalid argument, datatype, element, or value for [" + element + "].\n");
 					}
 					catch (std::out_of_range) {
-						cerr << "Error converting OBJ file: out of range number values for ["  << element << "].\n" << endl;
-						return;
+						throw std::out_of_range("Error converting OBJ file: out of range number values for [" + element + "].\n");
 					}
 					vertex* v = new vertex;
 					if (v) { /* nullptr check */
 						v->position = glm::vec3(x0, y0, z0);
 						v->normal = glm::vec3(0.0f, 0.0f, 0.0f);
-						g.add_vertex(v);
+						this->add_vertex(v);
 						tmpVertices.push_back(v);
 						vIndex++;
+					}
+					continue;
+				}
+				case VERTEX_TEXTURES: {
+					// Expecting a list of vertex textures
+					// Can ignore the 3rd element, it is almost always 0
+					float x0 = 0.0f, y0 = 0.0f;
+					this->vtPreComputed = true;
+					try {
+						stream >> element;
+						x0 = stof(element);
+						stream >> element;
+						y0 = stof(element);
+						stream >> element;
+					}
+					catch (std::invalid_argument) {
+						throw std::invalid_argument("Error converting OBJ file : invalid argument, datatype, element, or value for [" + element + "].\n");
+					}
+					catch (std::out_of_range) {
+						throw std::out_of_range("Error converting OBJ file: out of range number values for [" + element + "].\n");
+					}
+					glm::vec2 texture = glm::vec2(x0, y0);
+					if (vtIndex <= vIndex && tmpVertices[vtIndex]) {
+						tmpVertices[vtIndex]->texture = texture;
+						vtIndex++;
 					}
 					continue;
 				}
 				case VERTEX_NORMALS: {
 					// Expecting a list of vertex normals
 					float x0 = 0.0f, y0 = 0.0f, z0 = 0.0f;
+					this->vnPreComputed = true;
 					try {
 						stream >> element;
 						x0 = stof(element);
@@ -191,41 +205,39 @@ namespace geolib {
 						z0 = stof(element);
 					}
 					catch (std::invalid_argument) {
-						cerr << "Error converting OBJ file: invalid argument, datatype, element, or value for [" << element << "].\n" << endl;
-						return;
+						throw std::invalid_argument("Error converting OBJ file : invalid argument, datatype, element, or value for [" + element + "].\n");
 					}
 					catch (std::out_of_range) {
-						cerr << "Error converting OBJ file: out of range number values for [" << element << "].\n" << endl;
-						return;
+						throw std::out_of_range("Error converting OBJ file: out of range number values for [" + element + "].\n");
 					}
 					glm::vec3 normal = glm::vec3(x0, y0, z0);
-					tmpVertices[vnIndex]->normal = normal;
+					if (vnIndex <= vIndex && tmpVertices[vnIndex]) {
+						tmpVertices[vnIndex]->normal = normal;
+						vnIndex++;
+					}
 					continue;
 				}
 				case FACE: {
-					unsigned int i0 = 0, i1 = 0, i2 = 0;
+					unsigned int i[3] = {0};
 					try {
 						stream >> element;
-						i0 = stoi(element);
+						i[0] = stoi(element);
 						stream >> element;
-						i1 = stoi(element);
+						i[1] = stoi(element);
 						stream >> element;
-						i2 = stoi(element);
+						i[2] = stoi(element);
 					}
 					catch (std::invalid_argument) {
-						cerr << "Error converting OBJ file: invalid argument, datatype, element, or value for [" << element << "].\n" << endl;
-						return;
+						throw std::invalid_argument("Error converting OBJ file: invalid argument, datatype, element, or value for [" + element + "].\n");
 					}
 					catch (std::out_of_range) {
-						cerr << "Error converting OBJ file: out of range number values for [" << element << "].\n" << endl;
-						return;
+						throw std::out_of_range("Error converting OBJ file: out of range number values for [" + element + "].\n");
 					}
 					face* f = new face;
 					if (f) {
-						f->indices = glm::ivec3(i0, i1, i2);
-						f->normal = glm::vec3(0.0f, 0.0f, 0.0f);
+						f->indices = glm::ivec3(i[0], i[1], i[2]);
 						fIndex++;
-						g.add_face(f);
+						this->add_face(f);
 					}
 					continue;
 				}

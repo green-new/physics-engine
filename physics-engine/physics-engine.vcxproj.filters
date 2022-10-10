@@ -65,9 +65,6 @@
     <ClInclude Include="mesh.hpp">
       <Filter>Header Files\render</Filter>
     </ClInclude>
-    <ClInclude Include="attributes.hpp">
-      <Filter>Header Files\render</Filter>
-    </ClInclude>
     <ClInclude Include="shader.hpp">
       <Filter>Header Files\render</Filter>
     </ClInclude>

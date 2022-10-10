@@ -144,7 +144,6 @@
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="attributes.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="mesh.hpp" />

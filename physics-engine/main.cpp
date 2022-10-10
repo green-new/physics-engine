@@ -12,6 +12,7 @@
 #include "window.hpp"
 #include "texture.hpp"
 #include "mesh.hpp"
+#include "geometry.hpp"
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods);
 void reshape_callback(GLFWwindow* handle, int width, int height);
@@ -24,15 +25,8 @@ const uint16_t height = 1080;
 double mouseLastX, mouseLastY;
 
 texture_t txt_noise_red, txt_noise_green, txt_noise_blue, txt_red, txt_green, txt_blue, txt_xor_red, txt_xor_green, txt_xor_blue, txt_flat1;
-std::vector<vertex_t> basic_verts = {
-    // X, y, z, normX, normY, normZ, texU, texV (ST)
-    {   1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f   },
-    {   1.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f   },
-    {  -1.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f   },
-    {  -1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f   }
-};
-const std::vector<GLuint> indices = { 0, 1, 3, 1, 2, 3 };
-mesh* text, *cube;
+geolib::geometry octahedron, hexahedron, tetrahedron, icosahedron, dodecahedron, teapot, cube, pyramid, gourd;
+mesh* obj;
 shader* basic_prog;
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods) {
@@ -58,8 +52,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void destroy() {
-    delete text;
-    delete cube;
     delete basic_prog;
 
     glfwDestroyWindow(game_window->get_handle());
@@ -91,8 +83,20 @@ void start() {
     txt_flat1 = build_texture("flat_1.png");
 
     /* Generate meshes */
-    text = new mesh(basic_verts, indices, { txt_blue });
-    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_red });
+    try {
+        tetrahedron.get_geometry_from_obj("models/4_tetrahedron.obj");
+        hexahedron.get_geometry_from_obj("models/6_hexahedron.obj");
+        octahedron.get_geometry_from_obj("models/8_octahedron.obj");
+        icosahedron.get_geometry_from_obj("models/20_icosahedron.obj");
+        teapot.get_geometry_from_obj("models/teapot.obj");
+        pyramid.get_geometry_from_obj("models/pyramid.obj");
+        gourd.get_geometry_from_obj("models/gourd.obj");
+        dodecahedron.get_geometry_from_obj("models/dodecahedron.obj");
+    }
+    catch (std::exception e) {
+        std::cerr << e.what();
+    }
+    obj = new mesh(&icosahedron, {txt_noise_blue});
 
     /* Allocate shader program */
     basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
@@ -102,15 +106,6 @@ void start() {
 
     // Depth buffering (3D)
     glEnable(GL_DEPTH_TEST);
-}
-
-void test_geometry() {
-    geolib::geometry* g = new geolib::geometry;
-    geolib::get_geometry_from_obj("models/dodecahedron.obj", *g);
- 
-    std::cout << "Faces: " << g->get_face_count() << "\nVertices: " << g->get_vertex_count();
-    std::vector vertexData = g->get_vertex_data();
-    std::vector faceData = g->get_face_data();
 }
 
 void run() {
@@ -139,9 +134,6 @@ void run() {
         glm::vec3(-3.1f, 2.0f, 0.0f),
         glm::vec3(-5.0f, -3.0f, 1.4f)
     };
-
-    /* Geometry testing */
-    test_geometry();
 
     basic_prog->use();
     basic_prog->set_int("texture1", 0);
@@ -175,14 +167,15 @@ void run() {
             view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
             basic_prog->set_mat4("view", view);
             basic_prog->set_mat4("projection", projection);
-            for (unsigned int i = 0; i < n_cubes; i++) {
+            for (unsigned int i = 0; i < 10; i++) {
                 glm::mat4 model = glm::mat4(1.0f);
+                model = glm::scale(model, glm::vec3(0.75f));
                 model = glm::translate(model, positions[i]);
                 model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 1.0f));
 
                 basic_prog->use();
                 basic_prog->set_mat4("model", model);
-                cube->draw(*basic_prog);
+                obj->draw(*basic_prog);
             }
             // text->draw(*basic_prog);
 

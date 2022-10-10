@@ -3,9 +3,45 @@
 // Best practives for vbos, vaos https://www.khronos.org/opengl/wiki/Vertex_Specification_Best_Practices
 // Inspiration: https://learnopengl.com/Model-Loading/Mesh
 
-mesh::mesh(std::vector<vertex_t> _verts, std::vector<GLuint> _indices, std::vector<texture_t> _textures) {
-	verts = _verts;
-	indices = _indices;
+GLuint buffer_object::get() const {
+	return _object;
+}
+
+vbo::vbo(GLsizeiptr size, const void* data, GLenum target = GL_ARRAY_BUFFER, GLenum usage = GL_STATIC_DRAW) {
+	_target = target;
+	glGenBuffers(1, &_object);
+	glBindBuffer(target, _object);
+	glBufferData(target, size, data, usage);
+}
+vbo::~vbo() {
+	glDeleteBuffers(1, &_object);
+}
+void vbo::bind() const {
+	glBindBuffer(_target, _object);
+}
+void vbo::unbind() const {
+	glBindBuffer(_target, 0);
+}
+
+vao::vao(std::vector<attribute> attributes) {
+	glGenVertexArrays(1, &_object);
+	// Less expensive
+	for (const auto& a : attributes) {
+		glEnableVertexAttribArray(a.index);
+		glVertexAttribPointer(a.index, a.size, a.type, a.normalized, a.stride, a.pointer);
+	}
+}
+vao::~vao() {
+	glDeleteBuffers(1, &_object);
+}
+void vao::bind() const {
+	glBindVertexArray(_object);
+}
+void vao::unbind() const {
+	glBindVertexArray(0);
+}
+
+mesh::mesh(std::vector<texture_t> _textures) {
 	textures = _textures;
 	vbo = 0;
 	vao = 0;
@@ -27,24 +63,25 @@ void mesh::setup() {
 
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(vertex_t), (const void*)&verts[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), vertex_data.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_data.size() * sizeof(GLuint), idx_data.data(), GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void*)offsetof(vertex_t, vertex));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)0);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void*)offsetof(vertex_t, normal));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(3 * sizeof(GLfloat)));
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void*)offsetof(vertex_t, texture));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(6 * sizeof(GLfloat)));
 
 	glBindVertexArray(0);
 }
 
-/* Draws the mesh.
-https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDrawElements.
+/* 
+* Draws the mesh.
+* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDrawElements.
 */
 void const mesh::draw(shader& prog) {
 	for (uint16_t i = 0; i < textures.size(); i++) {
@@ -52,5 +89,5 @@ void const mesh::draw(shader& prog) {
 		glBindTexture(GL_TEXTURE_2D, textures[i]);
 	}
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, (GLsizei)idx_data.size(), GL_UNSIGNED_INT, 0);
 }
