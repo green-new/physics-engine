@@ -1,46 +1,77 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-#include <numbers>
-#include <bits/stdc++.h>
 #include "glad/glad.h"
-
 #include "shader.hpp"
 #include "texture.hpp"
 
-using PlatonicSolid =
-enum {
-	TETRAHEDRON,
-	CUBE,
-	OCTAHEDRON,
-	DODECAHEDRON,
-	ICOSAHEDRON
+typedef const struct attribute {
+	GLuint index;
+	GLint size;
+	GLenum type;
+	GLboolean normalized;
+	GLsizei stride;
+	const void* pointer;
+} attribute;
+
+/* Default interleaved position, normal, texture coordinates. */
+static std::vector<attribute> DEFAULT_ATTRIBUTES = {
+	{0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)0},
+	{1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(3 * sizeof(GLfloat))},
+	{2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(6 * sizeof(GLfloat))}
 };
 
-using vertex_t = 
-struct {
-	GLfloat vertex[3];
-	GLfloat normal[3];
-	GLfloat texture[2];
+class attribute_list {
+public:
+	attribute_list(std::vector<attribute> );
+	~attribute_list() = default;
+	void add_attribute(const attribute& a);
+private:
+	std::vector<attribute> m_attrib_list;
+};
+
+class buffer_object {
+public:
+	GLuint get() const;
+	virtual void bind() const = 0;
+	virtual void unbind() const = 0;
+protected:
+	GLuint _object;
+};
+
+/* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml */
+class vbo : public buffer_object {
+public:
+	vbo(GLsizeiptr size, const void* data, GLenum target, GLenum usage);
+	~vbo();
+	virtual void bind() const = 0;
+	virtual void unbind() const = 0;
+private:
+	GLenum _target;
+};
+
+/* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glVertexAttribPointer.xhtml */
+class vao : public buffer_object {
+	vao(std::vector<attribute> attributes = DEFAULT_ATTRIBUTES);
+	~vao();
+	virtual void bind() const = 0;
+	virtual void unbind() const = 0;
+};
+
+class ebo : public buffer_object {
+
 };
 
 class mesh {
-private:
-	std::vector<vertex_t> verts;
-	std::vector<GLuint> indices;
-	std::vector<texture_t> textures;
-	GLuint vbo;
-	GLuint vao;
-	GLuint ebo;
-
-	void setup();
 public:
-	mesh(std::vector<vertex_t> _verts, std::vector<GLuint> _indices, std::vector<texture_t> _textures);
+	mesh(std::vector<texture_t> _textures);
 	~mesh();
 	void const draw(shader& prog);
-};
+private:
+	std::vector<GLfloat> vertex_data;
+	std::vector<GLuint> idx_data;
+	std::vector<texture_t> textures;
 
-mesh* torus_mesh();
-mesh* cylinder_mesh();
-mesh* sphere_mesh();
-mesh* platonic_mesh(PlatonicSolid type, std::vector<texture_t> textures);
+
+	void setup();
+};

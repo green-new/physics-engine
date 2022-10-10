@@ -1,7 +1,6 @@
 #include "texture.hpp"
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
+
 
 /* Consider this paper for implementation:
 https://redirect.cs.umbc.edu/~olano/s2002c36/ch06.pdf 
@@ -25,9 +24,9 @@ GLuint noise_texture(color_t base, uint16_t width, uint16_t height, double frequ
 	for (uint16_t i = 0; i < height; i++)
 		for (uint16_t j = 0; j < width; j++) {
 			double d = perlin.octave2D_01(j * fx, i * fx, octave);
-			data[(i * width + j) * Cn + 0] = base.rgba.red / 255.0f * d;
-			data[(i * width + j) * Cn + 1] = base.rgba.green / 255.0f * d;
-			data[(i * width + j) * Cn + 2] = base.rgba.blue / 255.0f * d;
+			data[(i * width + j) * Cn + 0] = base.rgba.red / 255.0f * (float)d;
+			data[(i * width + j) * Cn + 1] = base.rgba.green / 255.0f * (float)d;
+			data[(i * width + j) * Cn + 2] = base.rgba.blue / 255.0f * (float)d;
 			data[(i * width + j) * Cn + 3] = 1.0f;
 		}
 

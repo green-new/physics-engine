@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+
 #include <iostream>
 #include <sstream>
 #include <format>
@@ -9,7 +12,7 @@
 #include "window.hpp"
 #include "texture.hpp"
 #include "mesh.hpp"
-#include "camera.hpp"
+#include "geometry.hpp"
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods);
 void reshape_callback(GLFWwindow* handle, int width, int height);
@@ -22,17 +25,9 @@ const uint16_t height = 1080;
 double mouseLastX, mouseLastY;
 
 texture_t txt_noise_red, txt_noise_green, txt_noise_blue, txt_red, txt_green, txt_blue, txt_xor_red, txt_xor_green, txt_xor_blue, txt_flat1;
-std::vector<vertex_t> basic_verts = {
-    // X, y, z, normX, normY, normZ, texU, texV (ST)
-    {   1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f   },
-    {   1.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f   },
-    {  -1.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f   },
-    {  -1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f   }
-};
-const std::vector<GLuint> indices = { 0, 1, 3, 1, 2, 3 };
-mesh* text, *cube;
+geolib::geometry octahedron, hexahedron, tetrahedron, icosahedron, dodecahedron, teapot, cube, pyramid, gourd;
+mesh* obj;
 shader* basic_prog;
-cam* camera;
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods) {
     if (action == GLFW_PRESS)
@@ -57,10 +52,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void destroy() {
-    delete text;
-    delete cube;
     delete basic_prog;
-    delete camera;
 
     glfwDestroyWindow(game_window->get_handle());
     glfwTerminate();
@@ -78,7 +70,7 @@ void start() {
 
     /* Create entities, load models, meshes, and textures */
     /* Generate textures */
-    uint32_t seed = 8129375492;
+    uint32_t seed = 81293754;
     txt_noise_red = noise_texture(RED, 64, 64, 1.0f, 8, seed); 
     txt_noise_green = noise_texture(GREEN, 64, 64, 1.0f, 8, seed);
     txt_noise_blue = noise_texture(BLUE, 64, 64, 1.0f, 8, seed);
@@ -91,14 +83,23 @@ void start() {
     txt_flat1 = build_texture("flat_1.png");
 
     /* Generate meshes */
-    text = new mesh(basic_verts, indices, { txt_blue });
-    cube = platonic_mesh(PlatonicSolid::CUBE, { txt_noise_blue });
+    try {
+        tetrahedron.get_geometry_from_obj("models/4_tetrahedron.obj");
+        hexahedron.get_geometry_from_obj("models/6_hexahedron.obj");
+        octahedron.get_geometry_from_obj("models/8_octahedron.obj");
+        icosahedron.get_geometry_from_obj("models/20_icosahedron.obj");
+        teapot.get_geometry_from_obj("models/teapot.obj");
+        pyramid.get_geometry_from_obj("models/pyramid.obj");
+        gourd.get_geometry_from_obj("models/gourd.obj");
+        dodecahedron.get_geometry_from_obj("models/dodecahedron.obj");
+    }
+    catch (std::exception e) {
+        std::cerr << e.what();
+    }
+    obj = new mesh(&icosahedron, {txt_noise_blue});
 
     /* Allocate shader program */
     basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
-
-    /* Allocate memory for camera */
-    camera = new cam(glm::vec3(0.0f, 0.0f, 0.0f)); 
     
     // Wireframe mode
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -109,7 +110,7 @@ void start() {
 
 void run() {
     const float PHYS_FREQ = 500.0f; // 500 Hz
-    const float RENDER_FREQ = 1000.0f;  // 1000 Hz
+    const float RENDER_FREQ = 2000.0f;  // 1000 Hz
     double       deltaTime = 0.0f,
         prevTime = glfwGetTime(),
         currTime = 0.0f,
@@ -119,6 +120,20 @@ void run() {
     bool        renderTick = false, 
                 physTick = false;
     unsigned int frames = 0;
+
+    const unsigned int n_cubes = 10;
+    glm::vec3 positions[n_cubes] = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(-4.5f, 1.0f, 0.5f),
+        glm::vec3(2.3f, 0.4f, -3.4f),
+        glm::vec3(6.3f, 9.4f, 3.0f),
+        glm::vec3(1.3f, 4.5f, -4.4f),
+        glm::vec3(8.9f, 0.3f, 5.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(-1.0f, -6.0f, 2.0f),
+        glm::vec3(-3.1f, 2.0f, 0.0f),
+        glm::vec3(-5.0f, -3.0f, 1.4f)
+    };
 
     basic_prog->use();
     basic_prog->set_int("texture1", 0);
@@ -142,23 +157,26 @@ void run() {
         renderTick = (currTime - renderTime > 1.0f / RENDER_FREQ);
         if (renderTick) {
             renderTime = currTime;
-            glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
-
             // view/projection transformations 
             // ===
-            glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
-            glm::mat4 model = glm::mat4(1.0f);
+            glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
             glm::mat4 view = glm::mat4(1.0f);
-            view = glm::translate(view, glm::vec3(-1.0f, 1.0f, -3.0f));
-            model = glm::rotate(model, (float)currTime, glm::vec3(1.0f, 1.0f, 0.0f));
-
-            basic_prog->use();
-            basic_prog->set_mat4("model", model);
+            view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
             basic_prog->set_mat4("view", view);
             basic_prog->set_mat4("projection", projection);
-            cube->draw(*basic_prog);
+            for (unsigned int i = 0; i < 10; i++) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::scale(model, glm::vec3(0.75f));
+                model = glm::translate(model, positions[i]);
+                model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 1.0f));
+
+                basic_prog->use();
+                basic_prog->set_mat4("model", model);
+                obj->draw(*basic_prog);
+            }
             // text->draw(*basic_prog);
 
             /* Update render system */

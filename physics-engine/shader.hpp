@@ -48,22 +48,6 @@ public:
 };
 
 /*
-	Struct definitions
-*/
-
-struct vao
-{
-	GLuint handle;
-};
-
-struct vbo
-{
-	GLuint handle;
-	GLint type;
-	bool dynamic;
-};
-
-/*
 	Externs (globals)
 */
 

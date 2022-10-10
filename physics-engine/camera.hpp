@@ -45,7 +45,7 @@ public:
 	glm::vec3 force;
 
 	cam(glm::vec3 _position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 _up = glm::vec3(0.0f, 1.0f, 0.0f), float _yaw = g_yaw, float _pitch = g_pitch)
-	: front(glm::vec3(0.0f, 0.0f, -1.0f)), velocity(glm::vec3(0.0f)), force(glm::vec3(0.0f)), speed(g_speed), sensitivity(g_sensitivity), fov(g_fov) {
+		: front(glm::vec3(0.0f, 0.0f, -1.0f)), velocity(glm::vec3(0.0f)), force(glm::vec3(0.0f)), speed(g_speed), sensitivity(g_sensitivity), fov(g_fov) {
 		position = _position;
 		worldup = _up;
 		yaw = _yaw;
