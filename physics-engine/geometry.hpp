@@ -19,7 +19,7 @@ For procedurally generated geometry, a face can only have 8 sides. */
 #define GEOLIB_SMOOTHNORMALS	0x02
 
 namespace geolib {
-	enum geotype {
+	enum SolidType {
 		TETRAHEDRON,
 		HEXAHEDRON,
 		OCTAHEDRON,
@@ -30,15 +30,18 @@ namespace geolib {
 		PYRAMID,
 		TEAPOT,
 		CUBE,
-		SPHERE	
+		SPHERE
 	};
 	class geometry_cache {
 	public:
 		geometry_cache(geometry_cache &other) = delete;
+		static geometry_cache* get_instance();
+		geometry* get_geometry(SolidType type);
 	protected:
 		static geometry_cache* single;
+		void build_all_geometries();
 	private:
-		std::map<std::string, geometry*> geomap;
+		std::map<SolidType, geometry*> geomap;
 	};
 	struct vertex {
 		glm::vec3 position;
