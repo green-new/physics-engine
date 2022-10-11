@@ -41,42 +41,15 @@ void vao::unbind() const {
 	glBindVertexArray(0);
 }
 
-mesh::mesh(std::vector<texture_t> _textures) {
-	textures = _textures;
-	vbo = 0;
-	vao = 0;
-	ebo = 0;
+ebo::ebo(GLsizeiptr size, const void* data, GLenum target = GL_ELEMENT_ARRAY_BUFFER, GLenum usage = GL_STATIC_DRAW) : vbo(size, data, target, usage) { }
+ebo::~ebo() {}
 
-	setup();
+mesh::mesh() {
+	
 }
 
 mesh::~mesh() {
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &vao);
-	glDeleteBuffers(1, &ebo);
-}
-
-void mesh::setup() {
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &ebo);
-	glGenBuffers(1, &vbo);
-
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), vertex_data.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_data.size() * sizeof(GLuint), idx_data.data(), GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)0);
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(3 * sizeof(GLfloat)));
-
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(6 * sizeof(GLfloat)));
-
-	glBindVertexArray(0);
+	
 }
 
 /* 
@@ -88,6 +61,6 @@ void const mesh::draw(shader& prog) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, textures[i]);
 	}
-	glBindVertexArray(vao);
+	glBindVertexArray(vertexArray);
 	glDrawElements(GL_TRIANGLES, (GLsizei)idx_data.size(), GL_UNSIGNED_INT, 0);
 }

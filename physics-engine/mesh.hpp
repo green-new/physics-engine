@@ -4,14 +4,17 @@
 #include "glad/glad.h"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "geometry.hpp"
 
-typedef const struct attribute {
+typedef struct attribute {
 	GLuint index;
 	GLint size;
 	GLenum type;
 	GLboolean normalized;
 	GLsizei stride;
 	const void* pointer;
+
+	attribute* next;
 } attribute;
 
 /* Default interleaved position, normal, texture coordinates. */
@@ -23,11 +26,12 @@ static std::vector<attribute> DEFAULT_ATTRIBUTES = {
 
 class attribute_list {
 public:
-	attribute_list(std::vector<attribute> );
+	attribute_list(attribute* a);
 	~attribute_list() = default;
-	void add_attribute(const attribute& a);
+	void add_attribute(attribute* a);
+	void del_attribute(attribute* a);
 private:
-	std::vector<attribute> m_attrib_list;
+	attribute* head;
 };
 
 class buffer_object {
@@ -35,6 +39,8 @@ public:
 	GLuint get() const;
 	virtual void bind() const = 0;
 	virtual void unbind() const = 0;
+
+	~buffer_object() = default;
 protected:
 	GLuint _object;
 };
@@ -43,9 +49,10 @@ protected:
 class vbo : public buffer_object {
 public:
 	vbo(GLsizeiptr size, const void* data, GLenum target, GLenum usage);
-	~vbo();
-	virtual void bind() const = 0;
-	virtual void unbind() const = 0;
+	// Declaring destructor virtual runs derived destructor -> base destructor (here).
+	virtual ~vbo() = default;
+	virtual void bind() const;
+	virtual void unbind() const;
 private:
 	GLenum _target;
 };
@@ -53,25 +60,25 @@ private:
 /* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glVertexAttribPointer.xhtml */
 class vao : public buffer_object {
 	vao(std::vector<attribute> attributes = DEFAULT_ATTRIBUTES);
-	~vao();
-	virtual void bind() const = 0;
-	virtual void unbind() const = 0;
+	virtual ~vao() = default;
+	virtual void bind() const;
+	virtual void unbind() const;
 };
 
-class ebo : public buffer_object {
-
+class ebo : public vbo {
+	ebo(GLsizeiptr size, const void* data, GLenum target, GLenum usage);
+	virtual ~ebo() = default;
 };
 
 class mesh {
 public:
-	mesh(std::vector<texture_t> _textures);
+	mesh(geolib::geometry* meshStructure, std::vector<texture_t> textures);
 	~mesh();
-	void const draw(shader& prog);
+	void const draw(shader& prog); 
 private:
-	std::vector<GLfloat> vertex_data;
-	std::vector<GLuint> idx_data;
-	std::vector<texture_t> textures;
+	geolib::geometry* _meshStructure;
 
-
-	void setup();
+	vbo vertexBuffer;
+	vao vertexArray;
+	ebo elementBuffer;
 };

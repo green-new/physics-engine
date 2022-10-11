@@ -15,94 +15,121 @@
 /* Triangulation is a relatively expensive operation.
 For procedurally generated geometry, a face can only have 8 sides. */
 #define GEOLIB_MAX_POLYGON_SIDES 8
+#define GEOLIB_FLATNORMALS		0x01
+#define GEOLIB_SMOOTHNORMALS	0x02
 
 namespace geolib {
 
 	struct vertex {
 		glm::vec3 position;
 		glm::vec2 texture;
-		glm::vec3 normal;
-		struct vertex* next;
-		struct vertex* prev;
+		glm::vec3 flatNormal;
+		glm::vec3 smoothNormal;
 	};
 
 	struct face {
 		glm::ivec3 indices;
-		struct face* next;
-		struct face* prev;
 	};
 
 	class geometry {
 	public:
 		geometry();
-		geometry(std::string filename);
 		~geometry();
 
 		unsigned int get_face_count();
 		unsigned int get_vertex_count();
 
-		void add_vertex(vertex* v);
-		void add_face(face* f);
+		void add_vertex(vertex v);
+		void add_face(face f);
 
-		void remove_vertex(vertex* v);
-		void remove_face(face* face);
+		void remove_vertex(unsigned int idx);
+		void remove_face(unsigned int idx);
 
-		bool is_empty() const;
-
-		void get_geometry_from_obj(std::string filename);
-
-	private:
-		vertex* vertex_data;
-		face* face_data;
-
-		unsigned int n_vertices;
-		unsigned int n_faces;
-	};
-
-	template<typename Vtype = float, typename Ftype = unsigned int>
-	class geometry_creator {
-	private:
-		std::vector<vertex*> tmpVertices;
-		std::vector<face*> tmpFaces;
+		vertex& get_vertex(unsigned int idx);
+		vertex& get_face(unsigned int idx);
 
 		void clear();
-		void calculate_normals();
-	public:
-		virtual geometry build_geometry();
+		void calc_normals();
+
+		bool is_empty() const;
+	protected:
+		std::vector<vertex> vertices;
+		std::vector<face> faces;
 	};
 
-	template<typename Vtype = float, typename Ftype = unsigned int>
-	class geometry_obj : geometry_creator<> {
+	class geometry_creator : public geometry {
+	protected:
+		mutable bool normalsWerePredefined;
+		mutable bool texturesWerePredefined;
+	public:
+		geometry build();
+	};
+
+	template<typename T>
+	class objreader_strategy {
+	public:
+		virtual T execute(std::stringstream& stream) = 0;
+	};
+
+	template<int L, typename S>
+	class vec_strategy : objreader_strategy<glm::vec<L, S>>{
+	private:
+		std::array<S, L> _data;
+	public:
+		vec_strategy();
+		~vec_strategy() = default;
+
+		virtual glm::vec<L, S> execute(std::stringstream& stream);
+	};
+
+	class geometry_obj : public geometry_creator {
 	private:
 		std::string filename;
-		
+		std::fstream file;
+		std::stringstream stream;
+		std::string element;
+		enum entry {
+			VERTEX,
+			VERTEX_TEXTURES,
+			VERTEX_NORMALS,
+			FACE
+		};
+		inline static const std::map<std::string, entry> map = {
+			{"v", VERTEX},
+			{"vt", VERTEX_TEXTURES},
+			{"vn", VERTEX_NORMALS},
+			{"f", FACE}
+		};
+		vec_strategy<3, float> vec3f_strategy;
+		vec_strategy<2, float> vec2f_strategy;
+		vec_strategy<3, unsigned int> vec3i_strategy;
+	protected:
+		unsigned int vIndex, vnIndex, vtIndex, fIndex;
 	public:
 		geometry_obj(std::string filename);
-		virtual geometry build_geometry();
+		virtual geometry build();
 	};
 
-	template<typename Vtype = float, typename Ftype = unsigned int>
-	class geometry_procedural : geometry_creator<> {
+	class geometry_procedural : public geometry_creator {
 	public:
 		geometry_procedural();
-		void add_vertex(Vtype v0, Vtype v1, Vtype v2);
-		void add_triangle(Ftype i0, Ftype i1, Ftype i2);
-		void add_quad(Ftype i0, Ftype i1, Ftype i2, Ftype i3);
-		void add_polygon(Ftype is[GEOLIB_MAX_POLYGON_SIDES], size_t n);
-		virtual geometry build_geometry();
+		unsigned int add_vertex(float v0, float v1, float v2);
+		void set_smooth_normal(unsigned int idx, float v0, float v1, float v2);
+		void set_flat_normal(unsigned int idx, float v0, float v1, float v2);
+		void set_normal(unsigned int idx, float v0, float v1, float v2);
+		void add_texture(unsigned int idx, float u, float v);
+		void add_triangle(unsigned int i0, unsigned int i1, unsigned int i2);
+		void add_quad(unsigned int i0, unsigned int i1, unsigned int i2, unsigned int i3);
+		void add_polygon(unsigned int is[GEOLIB_MAX_POLYGON_SIDES], size_t n);
 	};
 
-	/* Adapter class for retrieving GL appropriate data.
-	* Use as little VBOs as possible because our data is mostly static.
-	* Sequential vbo format.
-	*/
-	class geometry_adapter : mesh {
-		friend class geometry;
+	/* Adapter class for retrieving GL appropriate data. */
+	class geometry_adapter {
 	public:
-		geometry_adapter();
-		std::vector<GLfloat> get_vertex_data();
-		std::vector<GLuint> get_face_data();
+		geometry_adapter(geometry* adaptee);
+		std::vector<GLfloat> request_vertices(unsigned int normalConfig);
+		std::vector<GLuint> request_faces();
 	private:
-		geometry* _geo_data;
+		geometry* _geo_data; 
 	};
 }
