@@ -27,6 +27,18 @@ namespace geolib {
 	void geometry::add_face(face f) {
 		faces.push_back(f);
 	}
+	void geometry::remove_vertex(unsigned int idx) {
+		vertices.erase(vertices.begin() + idx);
+	}
+	void geometry::remove_face(unsigned int idx) {
+		faces.erase(faces.begin() + idx);
+	}
+	std::vector<vertex>& geometry::get_vdata() {
+		return vertices;
+	}
+	std::vector<face>& geometry::get_fdata() {
+		return faces;
+	}
 	/*
 	Determines if this geometry is empty (no vertices and no faces).
 	this is a const reference.
@@ -135,8 +147,10 @@ namespace geolib {
 		return glm::vec<L, S>(_data);
 	}
 	/* Liskov principle (upcasting) */
-	geometry geometry_creator::build() {
-		return (geometry)*this;
+	geometry* geometry_creator::build() {
+		if (!normalsWerePredefined) calc_normals();
+		geometry* g = new geometry(*this);
+		return g;
 	}
 	/*	=========================================
 	*	geometry_obj implementation
@@ -224,14 +238,16 @@ namespace geolib {
 		return this->get_vertex_count() - 1;
 	}
 	void geometry_procedural::set_smooth_normal(unsigned int idx, float v0, float v1, float v2) {
+		normalsWerePredefined = true;
 		glm::vec3 smoothNormal = glm::normalize(glm::vec3(v0, v1, v2));
 		get_vertex(idx).smoothNormal = smoothNormal;
 	}
 	void geometry_procedural::set_flat_normal(unsigned int idx, float v0, float v1, float v2) {
+		normalsWerePredefined = true;
 		glm::vec3 flatNormal = glm::normalize(glm::vec3(v0, v1, v2));
 		get_vertex(idx).flatNormal = flatNormal;
 	}
-	void geometry_procedural::set_flat_normal(unsigned int idx, float v0, float v1, float v2) {
+	void geometry_procedural::set_normal(unsigned int idx, float v0, float v1, float v2) {
 		set_smooth_normal(idx, v0, v1, v2);
 		set_flat_normal(idx, v0, v1, v2);
 	}
@@ -268,45 +284,45 @@ namespace geolib {
 	 *	geometry_adapter implementation
 		=========================================*/
 
-	geometry_adapter::geometry_adapter(geometry* adaptee) {
+	geometry_adapter::geometry_adapter(geometry* adaptee, unsigned int normalConfig) {
 		_geo_data = adaptee;
+		_normalConfig = normalConfig;
 	}
-	std::vector<GLfloat> geometry_adapter::request_vertices(unsigned int normalConfig) {
+	std::vector<GLfloat> geometry_adapter::request_vertices() {
 		std::vector<GLfloat> vertex_data;
-		_geo_data.
-		if (normalConfig == GEOLIB_FLATNORMALS)
-			for (vertex* ) {
-				vertex_data.push_back(current->position.x);
-				vertex_data.push_back(current->position.y);
-				vertex_data.push_back(current->position.z);
-				vertex_data.push_back(current->flatNormal.x);
-				vertex_data.push_back(current->flatNormal.y);
-				vertex_data.push_back(current->flatNormal.z);
-				vertex_data.push_back(current->texture.x);
-				vertex_data.push_back(current->texture.y);
+		if (_normalConfig == GEOLIB_FLATNORMALS)
+			for (const auto& current : _geo_data->get_vdata()) {
+				vertex_data.push_back(current.position.x);
+				vertex_data.push_back(current.position.y);
+				vertex_data.push_back(current.position.z);
+				vertex_data.push_back(current.flatNormal.x);
+				vertex_data.push_back(current.flatNormal.y);
+				vertex_data.push_back(current.flatNormal.z);
+				vertex_data.push_back(current.texture.x);
+				vertex_data.push_back(current.texture.y);
 			}
-		else if (normalConfig == GEOLIB_SMOOTHNORMALS)
-			for (vertex* current = _geo_data->get_vertex_head(); current; current = current->next) {
-				vertex_data.push_back(current->position.x);
-				vertex_data.push_back(current->position.y);
-				vertex_data.push_back(current->position.z);
-				vertex_data.push_back(current->smoothNormal.x);
-				vertex_data.push_back(current->smoothNormal.y);
-				vertex_data.push_back(current->smoothNormal.z);
-				vertex_data.push_back(current->texture.x);
-				vertex_data.push_back(current->texture.y);
+		else if (_normalConfig == GEOLIB_SMOOTHNORMALS)
+			for (const auto& current : _geo_data->get_vdata()) {
+				vertex_data.push_back(current.position.x);
+				vertex_data.push_back(current.position.y);
+				vertex_data.push_back(current.position.z);
+				vertex_data.push_back(current.smoothNormal.x);
+				vertex_data.push_back(current.smoothNormal.y);
+				vertex_data.push_back(current.smoothNormal.z);
+				vertex_data.push_back(current.texture.x);
+				vertex_data.push_back(current.texture.y);
 			}
-		else
-			return;
 
 		return vertex_data;
 	}
 	std::vector<GLuint> geometry_adapter::request_faces() {
 		std::vector<GLuint> idx_data;
-		for (face* current = _geo_data->get_face_head(); current; current = current->next) {
-			idx_data.push_back(current->indices.x);
-			idx_data.push_back(current->indices.y);
-			idx_data.push_back(current->indices.z);
+		for (const auto& current : _geo_data->get_fdata()) {
+			idx_data.push_back(current.indices.x);
+			idx_data.push_back(current.indices.y);
+			idx_data.push_back(current.indices.z);
 		}
 	}
+
+	
 }

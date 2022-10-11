@@ -3,11 +3,13 @@
 // Best practives for vbos, vaos https://www.khronos.org/opengl/wiki/Vertex_Specification_Best_Practices
 // Inspiration: https://learnopengl.com/Model-Loading/Mesh
 
-GLuint buffer_object::get() const {
-	return _object;
+vao* _defaultVao = new vao();
+
+GLuint* buffer_object::get() {
+	return &_object;
 }
 
-vbo::vbo(GLsizeiptr size, const void* data, GLenum target = GL_ARRAY_BUFFER, GLenum usage = GL_STATIC_DRAW) {
+vbo::vbo(GLsizeiptr size, const void* data, GLenum target, GLenum usage) {
 	_target = target;
 	glGenBuffers(1, &_object);
 	glBindBuffer(target, _object);
@@ -41,15 +43,36 @@ void vao::unbind() const {
 	glBindVertexArray(0);
 }
 
-ebo::ebo(GLsizeiptr size, const void* data, GLenum target = GL_ELEMENT_ARRAY_BUFFER, GLenum usage = GL_STATIC_DRAW) : vbo(size, data, target, usage) { }
+ebo::ebo(GLsizeiptr size, const void* data, GLenum target, GLenum usage) : vbo(size, data, target, usage) { }
 ebo::~ebo() {}
 
-mesh::mesh() {
-	
+mesh::mesh(geolib::geometry* meshStructure, std::vector<texture_t> textures, unsigned int normalConfig) {
+	_meshStructure = meshStructure;
+	_textures = textures;
+	geolib::geometry_adapter adapter = geolib::geometry_adapter(meshStructure, normalConfig);
+	_vertices = adapter.request_vertices();
+	_indices = adapter.request_faces();
+	_vertexBuffer = new vbo(_vertices.size(), _vertices.data());
+	_vertexArray = new vao();
+	_elementBuffer = new ebo(_indices.size(), _indices.data());
+}
+mesh::mesh(geolib::geometry_adapter adapter, std::vector<texture_t> textures) {
+	_meshStructure = adapter._geo_data;
+	_textures = textures;
+	_vertices = adapter.request_vertices();
+	_indices = adapter.request_faces();
+	_vertexBuffer = new vbo(_vertices.size(), _vertices.data());
+	_vertexArray = new vao();
+	_elementBuffer = new ebo(_indices.size(), _indices.data());
 }
 
 mesh::~mesh() {
-	
+	delete _meshStructure;
+	_vertices.clear();
+	_indices.clear();
+	delete _vertexBuffer;
+	delete _vertexArray;
+	delete _elementBuffer;
 }
 
 /* 
@@ -57,10 +80,10 @@ mesh::~mesh() {
 * https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDrawElements.
 */
 void const mesh::draw(shader& prog) {
-	for (uint16_t i = 0; i < textures.size(); i++) {
+	for (uint16_t i = 0; i < _textures.size(); i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D, textures[i]);
+		glBindTexture(GL_TEXTURE_2D, _textures[i]);
 	}
-	glBindVertexArray(vertexArray);
-	glDrawElements(GL_TRIANGLES, (GLsizei)idx_data.size(), GL_UNSIGNED_INT, 0);
+	_vertexArray->bind();
+	glDrawElements(GL_TRIANGLES, (GLsizei)_indices.size(), GL_UNSIGNED_INT, 0);
 }

@@ -19,7 +19,27 @@ For procedurally generated geometry, a face can only have 8 sides. */
 #define GEOLIB_SMOOTHNORMALS	0x02
 
 namespace geolib {
-
+	enum geotype {
+		TETRAHEDRON,
+		HEXAHEDRON,
+		OCTAHEDRON,
+		DODECAHEDRON,
+		ICOSAHEDRON,
+		DODECAHEDRON,
+		GOURD,
+		PYRAMID,
+		TEAPOT,
+		CUBE,
+		SPHERE	
+	};
+	class geometry_cache {
+	public:
+		geometry_cache(geometry_cache &other) = delete;
+	protected:
+		static geometry_cache* single;
+	private:
+		std::map<std::string, geometry*> geomap;
+	};
 	struct vertex {
 		glm::vec3 position;
 		glm::vec2 texture;
@@ -45,6 +65,9 @@ namespace geolib {
 		void remove_vertex(unsigned int idx);
 		void remove_face(unsigned int idx);
 
+		std::vector<vertex>& get_vdata();
+		std::vector<face>& get_fdata();
+
 		vertex& get_vertex(unsigned int idx);
 		vertex& get_face(unsigned int idx);
 
@@ -62,7 +85,7 @@ namespace geolib {
 		mutable bool normalsWerePredefined;
 		mutable bool texturesWerePredefined;
 	public:
-		geometry build();
+		geometry* build();
 	};
 
 	template<typename T>
@@ -107,7 +130,6 @@ namespace geolib {
 		unsigned int vIndex, vnIndex, vtIndex, fIndex;
 	public:
 		geometry_obj(std::string filename);
-		virtual geometry build();
 	};
 
 	class geometry_procedural : public geometry_creator {
@@ -126,10 +148,10 @@ namespace geolib {
 	/* Adapter class for retrieving GL appropriate data. */
 	class geometry_adapter {
 	public:
-		geometry_adapter(geometry* adaptee);
-		std::vector<GLfloat> request_vertices(unsigned int normalConfig);
+		geometry_adapter(geometry* adaptee, unsigned int normalConfig);
+		std::vector<GLfloat> request_vertices();
 		std::vector<GLuint> request_faces();
-	private:
 		geometry* _geo_data; 
+		unsigned int _normalConfig;
 	};
 }

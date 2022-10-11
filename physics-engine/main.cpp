@@ -12,7 +12,6 @@
 #include "window.hpp"
 #include "texture.hpp"
 #include "mesh.hpp"
-#include "geometry.hpp"
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods);
 void reshape_callback(GLFWwindow* handle, int width, int height);
@@ -25,7 +24,6 @@ const uint16_t height = 1080;
 double mouseLastX, mouseLastY;
 
 texture_t txt_noise_red, txt_noise_green, txt_noise_blue, txt_red, txt_green, txt_blue, txt_xor_red, txt_xor_green, txt_xor_blue, txt_flat1;
-geolib::geometry octahedron, hexahedron, tetrahedron, icosahedron, dodecahedron, teapot, cube, pyramid, gourd;
 mesh* obj;
 shader* basic_prog;
 
@@ -84,14 +82,7 @@ void start() {
 
     /* Generate meshes */
     try {
-        tetrahedron.get_geometry_from_obj("models/4_tetrahedron.obj");
-        hexahedron.get_geometry_from_obj("models/6_hexahedron.obj");
-        octahedron.get_geometry_from_obj("models/8_octahedron.obj");
-        icosahedron.get_geometry_from_obj("models/20_icosahedron.obj");
-        teapot.get_geometry_from_obj("models/teapot.obj");
-        pyramid.get_geometry_from_obj("models/pyramid.obj");
-        gourd.get_geometry_from_obj("models/gourd.obj");
-        dodecahedron.get_geometry_from_obj("models/dodecahedron.obj");
+        
     }
     catch (std::exception e) {
         std::cerr << e.what();
