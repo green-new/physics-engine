@@ -22,6 +22,7 @@ window* game_window;
 registry::registry* Registry;
 mesh* sphere;
 mesh* cube;
+mesh* dodecahedron;
 
 const uint16_t width = 1920;
 const uint16_t height = 1080;
@@ -70,12 +71,12 @@ void start() {
         Registry = new registry::registry;
     }
     catch (std::exception e) {
-        std::cerr << e.what();
+        std::cerr << "Error creating resources: " << e.what();
     }
+    sphere = new mesh(&Registry->get_geometry("uvsphere"), { Registry->get_texture("noise_cloud") }, GEOLIB_FLATNORMALS);
+    cube = new mesh(&Registry->get_geometry("cube"), { Registry->get_texture("noise_cloud") }, GEOLIB_FLATNORMALS);
+    dodecahedron = new mesh(&Registry->get_geometry("dodecahedron"), { Registry->get_texture("noise_lava") }, GEOLIB_SMOOTHNORMALS);
 
-    sphere = new mesh(&Registry->get_geometry("uvsphere"), { Registry->get_texture("noise_red") }, GEOLIB_FLATNORMALS);
-    cube = new mesh(&Registry->get_geometry("cube"), { Registry->get_texture("xor_red") }, GEOLIB_FLATNORMALS);
-    
     // Wireframe mode
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -111,7 +112,7 @@ void run() {
     };
     shader& prog = Registry->get_shader("VS_transform");
     prog.use();
-    prog.set_int("texture0", 1);
+    prog.set_int("texture1", 0);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(game_window->get_handle())) {
@@ -140,14 +141,17 @@ void run() {
             // ===
             glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
             glm::mat4 view = glm::mat4(1.0f);
+            view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
             glm::mat4 model = glm::mat4(1.0f);
-
+            model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 0.0f));
             prog.use();
             prog.set_mat4("projection", projection);
             prog.set_mat4("view", view);
             prog.set_mat4("model", model);
 
-            cube->draw(prog);
+            //sphere->draw(prog);
+            dodecahedron->draw(prog);
+            //cube->draw(prog);
 
             /* Update render system */
             // render_system->update();

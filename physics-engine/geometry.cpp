@@ -84,7 +84,8 @@ namespace geolib {
 			C.smoothNormal += normal;
 		}
 		for (auto& v : vertices) {
-			glm::normalize(v->smoothNormal);
+			vertex& vcpy = *v.get();
+			vcpy.smoothNormal = glm::normalize(vcpy.smoothNormal);
 		}
 		// Flat normals
 		for (auto& v : vertices) {
@@ -100,11 +101,14 @@ namespace geolib {
 			glm::vec3 Bp = B.position;
 			glm::vec3 Cp = C.position;
 			glm::vec3 normal = glm::cross(Bp - Ap, Cp - Ap);
-			glm::normalize(normal);
+			normal = glm::normalize(normal);
 			A.flatNormal = normal;
 			B.flatNormal = normal;
 			C.flatNormal = normal;
 		}
+	}
+	void geometry::calc_textures() {
+
 	}
 	void geometry::clear() {
 		vertices.clear();
@@ -131,7 +135,7 @@ namespace geolib {
 		glm::vec<L, S> vector;
 		if (_data.max_size() != L) throw std::out_of_range("Error converting OBJ file: invalid range for vec_strategy");
 		try {
-			for (int i = 0; i < L; i++) {
+			for (unsigned int i = 0; i < L; i++) {
 				if constexpr (std::is_same_v<S, float>) {
 					stream >> element;
 					_data.at(i) = stof(element);
@@ -154,6 +158,7 @@ namespace geolib {
 	/* Liskov principle (upcasting) */
 	geometry geometry_creator::build() {
 		if (!normalsWerePredefined) _g.calc_normals();
+		if (!texturesWerePredefined) _g.calc_textures();
 		return _g;
 	}
 	/*	=========================================
@@ -166,6 +171,12 @@ namespace geolib {
 	geometry_obj::geometry_obj(std::string filename) {
 		using namespace std;
 		file = fstream(filename);
+		vIndex = 0;
+		vnIndex = 0;
+		vtIndex = 0;
+		fIndex = 0;
+		normalsWerePredefined = false;
+		texturesWerePredefined = false;
 
 		/* If not .obj or not opened, get out! */
 		if (filename.substr(filename.find_last_of(".") + 1) != "obj") throw std::logic_error("Error reading OBJ file: file was not .OBJ file type");
@@ -211,7 +222,20 @@ namespace geolib {
 				}
 				case FACE: {
 					glm::uvec3 indices = vec3i_strategy.execute(stream);
-					face f;
+					indices.x -= 1;
+					indices.y -= 1;
+					indices.z -= 1;
+					if (indices.x >= _g.get_vertex_count()) {
+						indices.x = 0;
+					}
+					else if (indices.y >= _g.get_vertex_count()) {
+						indices.y = 0;
+					} 
+					else if (indices.z >= _g.get_vertex_count()) {
+						indices.z = 0;
+					}
+
+					face f {};
 					f.indices = indices;
 					_g.add_face(f);
 					fIndex++;

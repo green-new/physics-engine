@@ -17,9 +17,9 @@ struct attribute {
 
 /* Default interleaved position, normal, texture coordinates. */
 inline std::vector<attribute> DEFAULT_ATTRIBUTES = {
-	{0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)0},
-	{1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(3 * sizeof(GLfloat))},
-	{2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(6 * sizeof(GLfloat))}
+	{0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0},
+	{1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))},
+	{2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))}
 };
 
 class attribute_list {
@@ -83,4 +83,6 @@ private:
 	vbo* _vertexBuffer;
 	vao* _vertexArray;
 	ebo* _elementBuffer;
+
+	unsigned int VAO, VBO, EBO;
 };

@@ -27,8 +27,8 @@ vao::vao(std::vector<attribute> attributes) {
 	glGenVertexArrays(1, &_object);
 	// Less expensive
 	for (attribute& a : attributes) {
-		glEnableVertexAttribArray(a.index);
 		glVertexAttribPointer(a.index, a.size, a.type, a.normalized, a.stride, a.pointer);
+		glEnableVertexAttribArray(a.index);
 	}
 }
 vao::~vao() {
@@ -49,19 +49,27 @@ mesh::mesh(geolib::geometry* g, std::vector<texture_t> textures, int normalConfi
 	_vertices = adapter.request_vertices();
 	_indices = adapter.request_faces();
 	_textures = textures;
-	_vertexArray = new vao();
-	_vertexArray->bind();
-	_vertexBuffer = new vbo(_vertices.size(), _vertices.data());
-	_elementBuffer = new ebo(_indices.size(), _indices.data());
-	_vertexArray->unbind();
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, _vertices.size() * sizeof(GLfloat), _vertices.data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indices.size() * sizeof(GLuint), _indices.data(), GL_STATIC_DRAW);
+	for (attribute& a : DEFAULT_ATTRIBUTES) {
+		glEnableVertexAttribArray(a.index);
+		glVertexAttribPointer(a.index, a.size, a.type, a.normalized, a.stride, a.pointer);
+	}
+	glBindVertexArray(0);
 }
 
 mesh::~mesh() {
 	_vertices.clear();
 	_indices.clear();
-	delete _vertexBuffer;
+	/*delete _vertexBuffer;
 	delete _vertexArray;
-	delete _elementBuffer;
+	delete _elementBuffer;*/
 }
 
 /* 
@@ -73,6 +81,7 @@ void mesh::draw(shader& prog) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, _textures[i]);
 	}
-	_vertexArray->bind();
+	// vertexArray->bind();
+	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, (GLsizei)_indices.size(), GL_UNSIGNED_INT, 0);
 }

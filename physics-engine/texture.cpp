@@ -8,7 +8,7 @@ Or just find a simpler article on Perlin noise
 https://github.com/Reputeless/PerlinNoise/blob/master/example.cpp
 http://anderoonies.github.io/2020/03/21/perlin-colors.html
 */
-GLuint noise_texture(color_t base, uint16_t width, uint16_t height, double frequency, uint32_t octave, uint32_t seed) {
+texture_t noise_texture(color_t primary, color_t secondary, uint16_t width, uint16_t height, double frequency, uint32_t octave) {
 	/* Generate a map of perlin values:
 	1) Initalize map of width, height
 	2) Set map value i, j to RGB color(perlin.octave2D_01(x * fx, y * yf, octaves);
@@ -17,6 +17,7 @@ GLuint noise_texture(color_t base, uint16_t width, uint16_t height, double frequ
 	5) Return texture ID */
 	const double fx = (frequency / width);
 	const double fy = (frequency / height);
+	uint32_t seed = (uint32_t)time(NULL);
 	const siv::PerlinNoise perlin{ seed };
 	/* Number of components */
 	const unsigned int Cn = 4;
@@ -24,13 +25,19 @@ GLuint noise_texture(color_t base, uint16_t width, uint16_t height, double frequ
 	for (uint16_t i = 0; i < height; i++)
 		for (uint16_t j = 0; j < width; j++) {
 			double d = perlin.octave2D_01(j * fx, i * fx, octave);
-			data[(i * width + j) * Cn + 0] = base.rgba.red / 255.0f * (float)d;
-			data[(i * width + j) * Cn + 1] = base.rgba.green / 255.0f * (float)d;
-			data[(i * width + j) * Cn + 2] = base.rgba.blue / 255.0f * (float)d;
+			float component0 = primary.rgba.red / 255.0f;
+			float component1 = secondary.rgba.red / 255.0f;
+			float component2 = primary.rgba.green / 255.0f;
+			float component3 = secondary.rgba.green / 255.0f;
+			float component4 = primary.rgba.blue / 255.0f;
+			float component5 = secondary.rgba.blue / 255.0f;
+			data[(i * width + j) * Cn + 0] = component0 + component1 * d;
+			data[(i * width + j) * Cn + 1] = component2 + component3 * d;
+			data[(i * width + j) * Cn + 2] = component4 + component5 * d;
 			data[(i * width + j) * Cn + 3] = 1.0f;
 		}
 
-	GLuint id;
+	texture_t id;
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_2D, id);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -44,8 +51,8 @@ GLuint noise_texture(color_t base, uint16_t width, uint16_t height, double frequ
 }
 
 /* https://lodev.org/cgtutor/xortexture.html */
-GLuint xor_texture(color_t base, uint16_t width, uint16_t height) {
-	GLuint id;
+texture_t xor_texture(color_t base, uint16_t width, uint16_t height) {
+	texture_t id;
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_2D, id);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

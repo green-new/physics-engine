@@ -11,9 +11,12 @@ namespace registry {
 	class registrar {
 	public:
 		T& get(const std::string& uri) const {
-			return *_map.at(uri).get();
+			if (_map.contains(uri))
+				return *_map.at(uri).get();
+			else
+				throw std::invalid_argument("Registry: invalid argument for key " + uri + " in registry map");
 		}
-		void add(const std::string uri, T object) {
+		virtual void add(const std::string uri, T object) {
 			_map.insert( { uri, std::shared_ptr<T>(new T(object)) } );
 		}
 	protected:
@@ -38,7 +41,6 @@ namespace registry {
 			add("dodecahedron", geolib::geometry_obj("models/dodecahedron.obj").build());
 			add("icosahedron", geolib::geometry_obj("models/icosahedron.obj").build());
 			add("gourd", geolib::geometry_obj("models/gourd.obj").build());
-			add("pyramid", geolib::geometry_obj("models/pyramid.obj").build());
 			add("teapot", geolib::geometry_obj("models/teapot.obj").build());
 
 			// Procedural generation.
@@ -88,7 +90,11 @@ namespace registry {
 					y0 = sinf(theta0) * sinf(phi0);
 					z0 = cosf(theta1);
 					unsigned int i2 = sphereGen.add_vertex(x0, y0, z0);
-					sphereGen.add_triangle(i0, i1, i2);
+					x0 = sinf(theta1) * cosf(phi1);
+					y0 = sinf(theta1) * sinf(phi1);
+					z0 = cosf(theta0);
+					unsigned int i3 = sphereGen.add_vertex(x0, y0, z0);
+					sphereGen.add_quad(i1, i0, i2, i3);
 				}
 			}
 			add("uvsphere", sphereGen.build());
@@ -109,12 +115,13 @@ namespace registry {
 
 	class texture_registrar : public registrar<texture_t> {
 	public:
+		/*virtual void add(const std::string uri, texture_t object) override {
+
+		}*/
 		texture_registrar() {
-			uint32_t seed = 81293754;
 			// Procedural textures.
-			add("noise_red", noise_texture(RED, 64, 64, 1.0f, 8, seed));
-			add("noise_green", noise_texture(GREEN, 64, 64, 1.0f, 8, seed));
-			add("noise_blue", noise_texture(BLUE, 64, 64, 1.0f, 8, seed));
+			add("noise_cloud", noise_texture(BLUE, WHITE, 128, 128, 1.0f, 16));
+			add("noise_lava", noise_texture(BLACK, RED, 128, 128, 2.0f, 8));
 			add("red", solid_colored_texture(RED));
 			add("green", solid_colored_texture(GREEN));
 			add("blue", solid_colored_texture(BLUE));
@@ -153,9 +160,7 @@ namespace registry {
 			return shader_registry.get(name);
 		}
 		registry() { 
-			texture_registry = texture_registrar();
-			geometry_registry = geometry_registrar();
-			shader_registry = shader_registrar();
+
 		}
 		~registry() {
 			

@@ -23,6 +23,11 @@ union {
 const color_t RED =		{	0xFF0000FF	};
 const color_t GREEN =	{	0xFF00FF00	};
 const color_t BLUE =	{	0xFFFF0000	};
+const color_t YELLOW =	{	RED.c | GREEN.c};
+const color_t CYAN =	{	GREEN.c | BLUE.c};
+const color_t MAGENTA =	{	RED.c | BLUE.c };
+const color_t WHITE =	{	0xFFFFFFFF  };
+const color_t BLACK =	{	0x00000000	};
 
 color_t build_color(float r, float g, float b, float a);
 color_t build_color(byte r, byte g, byte b, byte a);
@@ -30,4 +35,4 @@ color_t build_color(byte r, byte g, byte b, byte a);
 texture_t xor_texture(color_t base, uint16_t width, uint16_t height);
 texture_t solid_colored_texture(color_t color);
 texture_t build_texture(std::string filename);
-texture_t noise_texture(color_t base, uint16_t width, uint16_t height, double frequency, uint32_t octave, uint32_t seed);
+texture_t noise_texture(color_t primary, color_t secondary, uint16_t width, uint16_t height, double frequency, uint32_t octave);

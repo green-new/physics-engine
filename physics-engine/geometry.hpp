@@ -55,6 +55,7 @@ namespace geolib {
 
 		void clear();
 		void calc_normals();
+		void calc_textures();
 
 		bool is_empty() const;
 	protected:
