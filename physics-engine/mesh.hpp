@@ -1,24 +1,22 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-#include "glad/glad.h"
+#include <glad/glad.h>
 #include "shader.hpp"
 #include "texture.hpp"
 #include "geometry.hpp"
 
-typedef struct attribute {
+struct attribute {
 	GLuint index;
 	GLint size;
 	GLenum type;
 	GLboolean normalized;
 	GLsizei stride;
 	const void* pointer;
-
-	attribute* next;
-} attribute;
+};
 
 /* Default interleaved position, normal, texture coordinates. */
-static std::vector<attribute> DEFAULT_ATTRIBUTES = {
+inline std::vector<attribute> DEFAULT_ATTRIBUTES = {
 	{0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)0},
 	{1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(3 * sizeof(GLfloat))},
 	{2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (const void*)(6 * sizeof(GLfloat))}
@@ -74,12 +72,10 @@ public:
 
 class mesh {
 public:
-	mesh(geolib::geometry* meshStructure, std::vector<texture_t> textures, unsigned int normalConfig);
-	mesh(geolib::geometry_adapter adapter, std::vector<texture_t> textures);
+	mesh(geolib::geometry* g, std::vector<texture_t> textures, int normalConfig);
 	~mesh();
-	void const draw(shader& prog); 
+	void draw(shader& prog);
 private:
-	geolib::geometry* _meshStructure;
 	std::vector<GLfloat> _vertices;
 	std::vector<GLuint> _indices;
 	std::vector<texture_t> _textures;

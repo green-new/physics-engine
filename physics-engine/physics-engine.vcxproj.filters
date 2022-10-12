@@ -68,9 +68,6 @@
     <ClInclude Include="shader.hpp">
       <Filter>Header Files\render</Filter>
     </ClInclude>
-    <ClInclude Include="model.hpp">
-      <Filter>Header Files\render</Filter>
-    </ClInclude>
     <ClInclude Include="texture.hpp">
       <Filter>Header Files\render</Filter>
     </ClInclude>
@@ -78,6 +75,9 @@
       <Filter>Header Files\math</Filter>
     </ClInclude>
     <ClInclude Include="camera.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>

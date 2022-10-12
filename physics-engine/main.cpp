@@ -10,8 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "window.hpp"
-#include "texture.hpp"
 #include "mesh.hpp"
+#include "resource.hpp"
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods);
 void reshape_callback(GLFWwindow* handle, int width, int height);
@@ -19,13 +19,13 @@ void destroy();
 
 // Some globals for the program
 window* game_window;
+registry::registry* Registry;
+mesh* sphere;
+mesh* cube;
+
 const uint16_t width = 1920;
 const uint16_t height = 1080;
 double mouseLastX, mouseLastY;
-
-texture_t txt_noise_red, txt_noise_green, txt_noise_blue, txt_red, txt_green, txt_blue, txt_xor_red, txt_xor_green, txt_xor_blue, txt_flat1;
-mesh* obj;
-shader* basic_prog;
 
 void input_callback(GLFWwindow* handle, int key, int s, int action, int mods) {
     if (action == GLFW_PRESS)
@@ -50,8 +50,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void destroy() {
-    delete basic_prog;
-
+    delete Registry;
     glfwDestroyWindow(game_window->get_handle());
     glfwTerminate();
     exit(0);
@@ -66,31 +65,16 @@ void start() {
     glfwSetKeyCallback(game_window->get_handle(), input_callback);
     glfwSetCursorPosCallback(game_window->get_handle(), mouse_callback);
 
-    /* Create entities, load models, meshes, and textures */
-    /* Generate textures */
-    uint32_t seed = 81293754;
-    txt_noise_red = noise_texture(RED, 64, 64, 1.0f, 8, seed); 
-    txt_noise_green = noise_texture(GREEN, 64, 64, 1.0f, 8, seed);
-    txt_noise_blue = noise_texture(BLUE, 64, 64, 1.0f, 8, seed);
-    txt_red = solid_colored_texture(RED);
-    txt_green = solid_colored_texture(GREEN);
-    txt_blue = solid_colored_texture(BLUE);
-    txt_xor_red = xor_texture(RED, 256, 256);
-    txt_xor_green = xor_texture(GREEN, 256, 256);
-    txt_xor_blue = xor_texture(BLUE, 256, 256);
-    txt_flat1 = build_texture("flat_1.png");
-
-    /* Generate meshes */
+    // Register everything
     try {
-        
+        Registry = new registry::registry;
     }
     catch (std::exception e) {
         std::cerr << e.what();
     }
-    obj = new mesh(&icosahedron, {txt_noise_blue});
 
-    /* Allocate shader program */
-    basic_prog = new shader("VS_transform.glsl", "FS_transform.glsl");
+    sphere = new mesh(&Registry->get_geometry("uvsphere"), { Registry->get_texture("noise_red") }, GEOLIB_FLATNORMALS);
+    cube = new mesh(&Registry->get_geometry("cube"), { Registry->get_texture("xor_red") }, GEOLIB_FLATNORMALS);
     
     // Wireframe mode
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -125,9 +109,10 @@ void run() {
         glm::vec3(-3.1f, 2.0f, 0.0f),
         glm::vec3(-5.0f, -3.0f, 1.4f)
     };
+    shader& prog = Registry->get_shader("VS_transform");
+    prog.use();
+    prog.set_int("texture0", 1);
 
-    basic_prog->use();
-    basic_prog->set_int("texture1", 0);
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(game_window->get_handle())) {
         frames++;
@@ -153,22 +138,16 @@ void run() {
             
             // view/projection transformations 
             // ===
-            glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
+            glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
             glm::mat4 view = glm::mat4(1.0f);
-            view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-            basic_prog->set_mat4("view", view);
-            basic_prog->set_mat4("projection", projection);
-            for (unsigned int i = 0; i < 10; i++) {
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::scale(model, glm::vec3(0.75f));
-                model = glm::translate(model, positions[i]);
-                model = glm::rotate(model, (float)currTime, glm::vec3(0.0f, 1.0f, 1.0f));
+            glm::mat4 model = glm::mat4(1.0f);
 
-                basic_prog->use();
-                basic_prog->set_mat4("model", model);
-                obj->draw(*basic_prog);
-            }
-            // text->draw(*basic_prog);
+            prog.use();
+            prog.set_mat4("projection", projection);
+            prog.set_mat4("view", view);
+            prog.set_mat4("model", model);
+
+            cube->draw(prog);
 
             /* Update render system */
             // render_system->update();

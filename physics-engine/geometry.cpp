@@ -1,31 +1,22 @@
 #include "geometry.hpp"
 
 namespace geolib {
+
 	/*	=========================================
-	*	geometry implementation
+	 *	geometry implementation
 		=========================================*/
 	geometry::geometry() { 
-		vertices = std::vector<vertex>();
-		faces = std::vector<face>();
+		vertices = std::vector<dynamic_vertex>();
+		faces = std::vector<dynamic_face>();
 	}
 	geometry::~geometry() { 
 		clear();
 	}
-	/*
-	Adds a vertex to the face list.
-
-	@param v Vertex struct.
-	*/
 	void geometry::add_vertex(vertex v) {
-		vertices.push_back(v);
+		vertices.push_back(dynamic_vertex(new vertex(v)));
 	}
-	/*
-	Adds a face to the face list.
-
-	@param f Face struct.
-	*/
 	void geometry::add_face(face f) {
-		faces.push_back(f);
+		faces.push_back(dynamic_face(new face(f)));
 	}
 	void geometry::remove_vertex(unsigned int idx) {
 		vertices.erase(vertices.begin() + idx);
@@ -33,11 +24,17 @@ namespace geolib {
 	void geometry::remove_face(unsigned int idx) {
 		faces.erase(faces.begin() + idx);
 	}
-	std::vector<vertex>& geometry::get_vdata() {
+	const std::vector<dynamic_vertex>& geometry::get_vdata() {
 		return vertices;
 	}
-	std::vector<face>& geometry::get_fdata() {
+	const std::vector<dynamic_face>& geometry::get_fdata() {
 		return faces;
+	}
+	vertex& geometry::get_vertex(unsigned int idx) {
+		return *vertices.at(idx).get();
+	}
+	face& geometry::get_face(unsigned int idx) {
+		return *faces.at(idx).get();
 	}
 	/*
 	Determines if this geometry is empty (no vertices and no faces).
@@ -51,14 +48,14 @@ namespace geolib {
 	@return unsigned int Number of faces.
 	*/
 	unsigned int geometry::get_face_count() {
-		return faces.size();
+		return (unsigned int)faces.size();
 	}
 	/*
 	Gets the vertex count of this geometry.
 	@return unsigned int Number of vertices.
 	*/
 	unsigned int geometry::get_vertex_count() {
-		return vertices.size();
+		return (unsigned int)vertices.size();
 	}
 	/*
 	Calculates and updates both the flat and smooth shading of the vertex normals.
@@ -68,13 +65,15 @@ namespace geolib {
 	void geometry::calc_normals() {
 		// Set all normals to zero if swapping to smooth shading
 		for (auto& v : vertices) {
-			v.smoothNormal = glm::vec3(0.0f);
+			vertex& vcpy = *v.get();
+			vcpy.smoothNormal = glm::vec3(0.0f);
 		}
 		// Smooth normal
 		for (auto& f : faces) {
-			vertex& A = get_vertex(f.indices[0]);
-			vertex& B = get_vertex(f.indices[1]);
-			vertex& C = get_vertex(f.indices[2]);
+			const face& fcpy = *f.get();
+			vertex& A = get_vertex(fcpy.indices[0]);
+			vertex& B = get_vertex(fcpy.indices[1]);
+			vertex& C = get_vertex(fcpy.indices[2]);
 			glm::vec3 Ap = A.position;
 			glm::vec3 Bp = B.position;
 			glm::vec3 Cp = C.position;
@@ -85,16 +84,18 @@ namespace geolib {
 			C.smoothNormal += normal;
 		}
 		for (auto& v : vertices) {
-			glm::normalize(v.smoothNormal);
+			glm::normalize(v->smoothNormal);
 		}
 		// Flat normals
 		for (auto& v : vertices) {
-			v.flatNormal = glm::vec3(0.0f);
+			vertex& vcpy = *v.get();
+			vcpy.flatNormal = glm::vec3(0.0f);
 		}
 		for (auto& f : faces) {
-			vertex& A = get_vertex(f.indices[0]);
-			vertex& B = get_vertex(f.indices[1]);
-			vertex& C = get_vertex(f.indices[2]);
+			const face& fcpy = *f.get();
+			vertex& A = get_vertex(fcpy.indices[0]);
+			vertex& B = get_vertex(fcpy.indices[1]);
+			vertex& C = get_vertex(fcpy.indices[2]);
 			glm::vec3 Ap = A.position;
 			glm::vec3 Bp = B.position;
 			glm::vec3 Cp = C.position;
@@ -114,28 +115,32 @@ namespace geolib {
 	*	vertex_strategy_objreader implementation
 		=========================================*/
 
-	template<int L, typename S>
+	template<int L, class S>
 	vec_strategy<L, S>::vec_strategy() {
-		static_assert(std::is_same<S, float>::value);
-		static_assert(std::is_same<S, int>::value);
-		static_assert(std::is_same<S, short>::value);
-		_data = { 0, 0, 0 };
+		static_assert(std::is_same_v<S, float> ||
+			std::is_same_v<S, int> ||
+			std::is_same_v<S, unsigned int> ||
+			std::is_same_v<S, short>,
+			"Must be of type float, int, unsigned int, or short.");
+		_data = { 0 };
 	}
 
-	template<int L, typename S>
+	template<int L, class S>
 	glm::vec<L, S> vec_strategy<L, S>::execute(std::stringstream& stream) {
 		std::string element;
-		if (_data.max_size() != L) return;
+		glm::vec<L, S> vector;
+		if (_data.max_size() != L) throw std::out_of_range("Error converting OBJ file: invalid range for vec_strategy");
 		try {
 			for (int i = 0; i < L; i++) {
-				if (std::is_same<S, float>::value) {
+				if constexpr (std::is_same_v<S, float>) {
 					stream >> element;
 					_data.at(i) = stof(element);
 				}
-				else if (std::is_same<S, unsigned int>::value) {
+				else if constexpr (std::is_same_v<S, unsigned int>) {
 					stream >> element;
 					_data.at(i) = (unsigned int)stoi(element);
 				}
+				vector[i] = _data.at(i);
 			}
 		}
 		catch (std::invalid_argument) {
@@ -144,13 +149,12 @@ namespace geolib {
 		catch (std::out_of_range) {
 			throw std::out_of_range("Error converting OBJ file: out of range number values for [" + element + "].\n");
 		}
-		return glm::vec<L, S>(_data);
+		return vector;
 	}
 	/* Liskov principle (upcasting) */
-	geometry* geometry_creator::build() {
-		if (!normalsWerePredefined) calc_normals();
-		geometry* g = new geometry(*this);
-		return g;
+	geometry geometry_creator::build() {
+		if (!normalsWerePredefined) _g.calc_normals();
+		return _g;
 	}
 	/*	=========================================
 	*	geometry_obj implementation
@@ -181,18 +185,16 @@ namespace geolib {
 				switch (map.at(element)) {
 				case VERTEX: {
 					glm::vec3 position = vec3f_strategy.execute(stream);
-					vertex* v = new vertex;
-					if (v) { /* nullptr check */
-						v->position = position;
-						this->add_vertex(*v);
-						vIndex++;
-					}
+					vertex v;
+					v.position = position;
+					_g.add_vertex(v);
+					vIndex++;
 					continue;
 				}
 				case VERTEX_TEXTURES: {
 					glm::vec2 texture = vec2f_strategy.execute(stream);
-					if (vtIndex <= vIndex && &vertices[vtIndex]) {
-						vertices[vtIndex].texture = texture;
+					if (vtIndex <= vIndex) {
+						_g.get_vertex(vtIndex).texture = texture;
 						texturesWerePredefined = true;
 						vtIndex++;
 					}
@@ -200,8 +202,8 @@ namespace geolib {
 				}
 				case VERTEX_NORMALS: {
 					glm::vec3 normal = vec3f_strategy.execute(stream);
-					if (vnIndex <= vIndex && &vertices[vnIndex]) {
-						vertices[vnIndex].smoothNormal = normal;
+					if (vnIndex <= vIndex) {
+						_g.get_vertex(vnIndex).smoothNormal = normal;
 						normalsWerePredefined = true;
 						vnIndex++;
 					}
@@ -209,12 +211,10 @@ namespace geolib {
 				}
 				case FACE: {
 					glm::uvec3 indices = vec3i_strategy.execute(stream);
-					face* f = new face;
-					if (f) {
-						f->indices = indices;
-						add_face(*f);
-						fIndex++;
-					}
+					face f;
+					f.indices = indices;
+					_g.add_face(f);
+					fIndex++;
 					continue;
 				}
 				default:
@@ -222,6 +222,12 @@ namespace geolib {
 				}
 			}
 		}
+	}
+	geometry_obj::~geometry_obj() {
+		if (file)
+			file.close();
+		if (stream)
+			stream.clear();
 	}
 
 	/*	=========================================
@@ -231,21 +237,21 @@ namespace geolib {
 	geometry_procedural::geometry_procedural() { }
 	unsigned int geometry_procedural::add_vertex(float v0, float v1, float v2) {
 		glm::vec3 position = glm::vec3(v0, v1, v2);
-		vertex* v = new vertex;
-		v->position = position;
-		(geometry(*this)).add_vertex(*v);
+		vertex v;
+		v.position = position;
+		_g.add_vertex(v);
 
-		return this->get_vertex_count() - 1;
+		return _g.get_vertex_count() - 1;
 	}
 	void geometry_procedural::set_smooth_normal(unsigned int idx, float v0, float v1, float v2) {
 		normalsWerePredefined = true;
 		glm::vec3 smoothNormal = glm::normalize(glm::vec3(v0, v1, v2));
-		get_vertex(idx).smoothNormal = smoothNormal;
+		_g.get_vertex(idx).smoothNormal = smoothNormal;
 	}
 	void geometry_procedural::set_flat_normal(unsigned int idx, float v0, float v1, float v2) {
 		normalsWerePredefined = true;
 		glm::vec3 flatNormal = glm::normalize(glm::vec3(v0, v1, v2));
-		get_vertex(idx).flatNormal = flatNormal;
+		_g.get_vertex(idx).flatNormal = flatNormal;
 	}
 	void geometry_procedural::set_normal(unsigned int idx, float v0, float v1, float v2) {
 		set_smooth_normal(idx, v0, v1, v2);
@@ -256,9 +262,9 @@ namespace geolib {
 	*/
 	void geometry_procedural::add_triangle(unsigned int i0, unsigned int i1, unsigned int i2) {
 		glm::ivec3 indices = glm::ivec3(i0, i1, i2);
-		face* f = new face;
-		f->indices = indices;
-		add_face(*f);
+		face f;
+		f.indices = indices;
+		_g.add_face(f);
 	}
 	/*
 	Must be entered in counter-clockwise.
@@ -271,11 +277,12 @@ namespace geolib {
 	Fan triangulation.
 	Can only be a convex polygon or weird meshes will result.
 	*/
-	void geometry_procedural::add_polygon(unsigned int is[GEOLIB_MAX_POLYGON_SIDES], size_t n) {
+	void geometry_procedural::add_polygon(unsigned int is[GEOLIB_MAX_POLYGON_SIDES], unsigned int n) {
 		if (n > GEOLIB_MAX_POLYGON_SIDES) return;
+		if (n < 3) return;
 		unsigned int base = is[0];
-		unsigned int n_triangles = n - 2;
-		for (int i = 1; i <= n_triangles; i++) {
+		unsigned int n_triangles = n - 2U;
+		for (unsigned int i = 1; i <= n_triangles; i++) {
 			add_triangle(base, is[i], is[i + 1]);
 		}
 	}
@@ -292,25 +299,27 @@ namespace geolib {
 		std::vector<GLfloat> vertex_data;
 		if (_normalConfig == GEOLIB_FLATNORMALS)
 			for (const auto& current : _geo_data->get_vdata()) {
-				vertex_data.push_back(current.position.x);
-				vertex_data.push_back(current.position.y);
-				vertex_data.push_back(current.position.z);
-				vertex_data.push_back(current.flatNormal.x);
-				vertex_data.push_back(current.flatNormal.y);
-				vertex_data.push_back(current.flatNormal.z);
-				vertex_data.push_back(current.texture.x);
-				vertex_data.push_back(current.texture.y);
+				vertex& cpy = *current.get();
+				vertex_data.push_back(cpy.position.x);
+				vertex_data.push_back(cpy.position.y);
+				vertex_data.push_back(cpy.position.z);
+				vertex_data.push_back(cpy.flatNormal.x);
+				vertex_data.push_back(cpy.flatNormal.y);
+				vertex_data.push_back(cpy.flatNormal.z);
+				vertex_data.push_back(cpy.texture.x);
+				vertex_data.push_back(cpy.texture.y);
 			}
 		else if (_normalConfig == GEOLIB_SMOOTHNORMALS)
 			for (const auto& current : _geo_data->get_vdata()) {
-				vertex_data.push_back(current.position.x);
-				vertex_data.push_back(current.position.y);
-				vertex_data.push_back(current.position.z);
-				vertex_data.push_back(current.smoothNormal.x);
-				vertex_data.push_back(current.smoothNormal.y);
-				vertex_data.push_back(current.smoothNormal.z);
-				vertex_data.push_back(current.texture.x);
-				vertex_data.push_back(current.texture.y);
+				vertex& cpy = *current.get();
+				vertex_data.push_back(cpy.position.x);
+				vertex_data.push_back(cpy.position.y);
+				vertex_data.push_back(cpy.position.z);
+				vertex_data.push_back(cpy.smoothNormal.x);
+				vertex_data.push_back(cpy.smoothNormal.y);
+				vertex_data.push_back(cpy.smoothNormal.z);
+				vertex_data.push_back(cpy.texture.x);
+				vertex_data.push_back(cpy.texture.y);
 			}
 
 		return vertex_data;
@@ -318,11 +327,11 @@ namespace geolib {
 	std::vector<GLuint> geometry_adapter::request_faces() {
 		std::vector<GLuint> idx_data;
 		for (const auto& current : _geo_data->get_fdata()) {
-			idx_data.push_back(current.indices.x);
-			idx_data.push_back(current.indices.y);
-			idx_data.push_back(current.indices.z);
+			face& cpy = *current.get();
+			idx_data.push_back(cpy.indices.x);
+			idx_data.push_back(cpy.indices.y);
+			idx_data.push_back(cpy.indices.z);
 		}
+		return idx_data;
 	}
-
-	
 }
