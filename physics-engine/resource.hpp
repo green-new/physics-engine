@@ -45,14 +45,14 @@ namespace registry {
 
 			// Procedural generation.
 			geolib::geometry_procedural cubeGen;
-			unsigned int c0 = cubeGen.add_vertex(-1, -1, -1);
-			unsigned int c1 = cubeGen.add_vertex(1, -1, -1);
-			unsigned int c2 = cubeGen.add_vertex(-1, 1, -1);
-			unsigned int c3 = cubeGen.add_vertex(1, 1, -1);
-			unsigned int c4 = cubeGen.add_vertex(-1, -1, 1);
-			unsigned int c5 = cubeGen.add_vertex(-1, 1, 1);
-			unsigned int c6 = cubeGen.add_vertex(1, 1, 1);
-			unsigned int c7 = cubeGen.add_vertex(1, -1, 1);
+			unsigned int c0 = cubeGen.add_vertex(-0.5f, -0.5f, -0.5f);
+			unsigned int c1 = cubeGen.add_vertex(0.5f, -0.5f, -0.5f);
+			unsigned int c2 = cubeGen.add_vertex(-0.5f, 0.5f, -0.5f);
+			unsigned int c3 = cubeGen.add_vertex(0.5f, 0.5f, -0.5f);
+			unsigned int c4 = cubeGen.add_vertex(-0.5f, -0.5f, 0.5f);
+			unsigned int c5 = cubeGen.add_vertex(-0.5f, 0.5f, 0.5f);
+			unsigned int c6 = cubeGen.add_vertex(0.5f, 0.5f, 0.5f);
+			unsigned int c7 = cubeGen.add_vertex(0.5f, -0.5f, 0.5f);
 			cubeGen.add_quad(c0, c2, c3, c1);
 			cubeGen.add_quad(c1, c0, c4, c7);
 			cubeGen.add_quad(c7, c1, c3, c6);
@@ -68,33 +68,36 @@ namespace registry {
 			// z = z0 + r * cos(A)
 			// where r > 0, A = theta[0, pi] and P = phi[0, 2pi]
 			geolib::geometry_procedural sphereGen;
-			unsigned int Us = 5;
-			unsigned int Vs = 12;
+			unsigned int Us = 64;
+			unsigned int Vs = 64;
 			float pi = std::numbers::pi_v<float>;
 			float x0, y0, z0;
 			for (unsigned int u = 0; u < Us; u++) {
 				float theta0 = pi * u / Us;
-				float theta1 = pi * (u + 1) / Us;
+				float theta1 = pi * (u + 1.0f) / Us;
 				for (unsigned int v = 0; v < Vs; v++) {
 					float phi0 = 2 * pi * v / Vs;
-					float phi1 = 2 * pi * (v + 1) / Vs;
+					float phi1 = 2 * pi * (v + 1.0f) / Vs;
 					x0 = sinf(theta0) * cosf(phi0);
 					y0 = sinf(theta0) * sinf(phi0);
 					z0 = cosf(theta0);
 					unsigned int i0 = sphereGen.add_vertex(x0, y0, z0);
-					x0 = sinf(theta1) * cosf(phi1);
-					y0 = sinf(theta1) * sinf(phi1);
-					z0 = cosf(theta1);
+					x0 = sinf(theta0) * cosf(phi1);
+					y0 = sinf(theta0) * sinf(phi1);
+					z0 = cosf(theta0);
 					unsigned int i1 = sphereGen.add_vertex(x0, y0, z0);
-					x0 = sinf(theta0) * cosf(phi0);
-					y0 = sinf(theta0) * sinf(phi0);
+					x0 = sinf(theta1) * cosf(phi0);
+					y0 = sinf(theta1) * sinf(phi0);
 					z0 = cosf(theta1);
 					unsigned int i2 = sphereGen.add_vertex(x0, y0, z0);
 					x0 = sinf(theta1) * cosf(phi1);
 					y0 = sinf(theta1) * sinf(phi1);
-					z0 = cosf(theta0);
+					z0 = cosf(theta1);
 					unsigned int i3 = sphereGen.add_vertex(x0, y0, z0);
-					sphereGen.add_quad(i1, i0, i2, i3);
+					if (u != 0 || u != Us - 2)
+						sphereGen.add_quad(i0, i2, i3, i1);
+					else
+						sphereGen.add_triangle(i0, i2, i3);
 				}
 			}
 			add("uvsphere", sphereGen.build());
@@ -115,23 +118,27 @@ namespace registry {
 
 	class texture_registrar : public registrar<texture_t> {
 	public:
-		/*virtual void add(const std::string uri, texture_t object) override {
-
-		}*/
 		texture_registrar() {
+			add("enke.png", build_texture("enke.png"));
 			// Procedural textures.
-			add("noise_cloud", noise_texture(BLUE, WHITE, 128, 128, 1.0f, 16));
-			add("noise_lava", noise_texture(BLACK, RED, 128, 128, 2.0f, 8));
+			float freq = 8.0f;
+			uint32_t octs = 5;
+			uint16_t size = 128;
+			add("cloud", noise_texture(BLUE, WHITE, size, size, freq, octs));
+			add("lava", noise_texture(BLACK, RED, size, size, freq, octs));
+			add("magenta_white", noise_texture(MAGENTA, WHITE, size, size, freq, octs));
+			add("black_white", noise_texture(BLACK, WHITE, size, size, freq, octs));
+			add("better_cloud", noise_texture(CYAN, WHITE, size, size, freq, octs));
+			add("water", noise_texture(BLUE, build_colorb(128, 128, 128, 255), size, size, freq, octs));
+			add("grass", noise_texture(build_colorb(47, 35, 0, 255), build_colorb(0, 64, 0, 255), size, size, freq, octs));
+			add("rock", noise_texture(build_colorb(128, 128, 128, 255), build_colorb(64, 64, 64, 255), size, size, freq, octs));
 			add("red", solid_colored_texture(RED));
 			add("green", solid_colored_texture(GREEN));
 			add("blue", solid_colored_texture(BLUE));
+			add("yellow", solid_colored_texture(YELLOW));
 			add("xor_red", xor_texture(RED, 256, 256));
 			add("xor_green", xor_texture(GREEN, 256, 256));
 			add("xor_blue", xor_texture(BLUE, 256, 256));
-
-			// Textures from file.
-			std::string flat_1 = "flat_1.png";
-			add(flat_1, build_texture(flat_1));
 		}
 		~texture_registrar() {
 			// We need to delete the GL textures associated in this map.
@@ -141,7 +148,7 @@ namespace registry {
 			// to eliminate things created in the constructor.
 			for (const auto& it : _map) {
 				texture_t* t = it.second.get();
-				glDeleteTextures(1, t);
+				glDeleteTextures(0.5f, t);
 			}
 		}
 	};

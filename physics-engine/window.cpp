@@ -21,6 +21,7 @@ window::window(const uint16_t _width, const uint16_t _height, std::string _title
     /* Make the window's context current */
     glfwMakeContextCurrent(handle);
 
+    glfwSetInputMode(handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowSizeCallback(handle, reshape_callback);
 }
 

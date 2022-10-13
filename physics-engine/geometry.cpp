@@ -77,8 +77,8 @@ namespace geolib {
 			glm::vec3 Ap = A.position;
 			glm::vec3 Bp = B.position;
 			glm::vec3 Cp = C.position;
-			glm::vec3 normal = glm::cross(Bp - Ap, Cp - Ap);
-			glm::normalize(normal);
+			glm::vec3 normal = glm::cross(Cp - Ap, Bp - Ap);
+			normal = glm::normalize(normal);
 			A.smoothNormal += normal;
 			B.smoothNormal += normal;
 			C.smoothNormal += normal;
@@ -88,26 +88,36 @@ namespace geolib {
 			vcpy.smoothNormal = glm::normalize(vcpy.smoothNormal);
 		}
 		// Flat normals
-		for (auto& v : vertices) {
-			vertex& vcpy = *v.get();
-			vcpy.flatNormal = glm::vec3(0.0f);
+		for (auto& f : faces) {
+			face& fcpy = *f.get();
+			fcpy.flatNormal = glm::vec3(0.0f);
 		}
 		for (auto& f : faces) {
-			const face& fcpy = *f.get();
+			face& fcpy = *f.get();
 			vertex& A = get_vertex(fcpy.indices[0]);
 			vertex& B = get_vertex(fcpy.indices[1]);
 			vertex& C = get_vertex(fcpy.indices[2]);
 			glm::vec3 Ap = A.position;
 			glm::vec3 Bp = B.position;
 			glm::vec3 Cp = C.position;
-			glm::vec3 normal = glm::cross(Bp - Ap, Cp - Ap);
+			glm::vec3 normal = glm::cross(Cp - Ap, Bp - Ap);
 			normal = glm::normalize(normal);
-			A.flatNormal = normal;
-			B.flatNormal = normal;
-			C.flatNormal = normal;
+			fcpy.flatNormal = normal;
 		}
 	}
+	/*
+	Calculates the U, V (S, T) coordinates of the given geometry.
+	*/
 	void geometry::calc_textures() {
+		for (auto& f : faces) {
+			const face& fcpy = *f.get();
+			vertex& A = get_vertex(fcpy.indices[0]);
+			vertex& B = get_vertex(fcpy.indices[1]);
+			vertex& C = get_vertex(fcpy.indices[2]);
+			glm::vec2 F;
+
+
+		}
 
 	}
 	void geometry::clear() {
@@ -155,15 +165,11 @@ namespace geolib {
 		}
 		return vector;
 	}
-	/* Liskov principle (upcasting) */
 	geometry geometry_creator::build() {
 		if (!normalsWerePredefined) _g.calc_normals();
 		if (!texturesWerePredefined) _g.calc_textures();
 		return _g;
 	}
-	/*	=========================================
-	*	geometry_obj implementation
-		=========================================*/
 	/*
 	Instantiates a geometry object from given .obj file.
 	https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
@@ -275,7 +281,7 @@ namespace geolib {
 	void geometry_procedural::set_flat_normal(unsigned int idx, float v0, float v1, float v2) {
 		normalsWerePredefined = true;
 		glm::vec3 flatNormal = glm::normalize(glm::vec3(v0, v1, v2));
-		_g.get_vertex(idx).flatNormal = flatNormal;
+		_g.get_face(idx).flatNormal = flatNormal;
 	}
 	void geometry_procedural::set_normal(unsigned int idx, float v0, float v1, float v2) {
 		set_smooth_normal(idx, v0, v1, v2);
@@ -295,7 +301,7 @@ namespace geolib {
 	*/
 	void geometry_procedural::add_quad(unsigned int i0, unsigned int i1, unsigned int i2, unsigned int i3) {
 		add_triangle(i0, i1, i2);
-		add_triangle(i2, i3, i0);
+		add_triangle(i2, i0, i3);
 	}
 	/*
 	Fan triangulation.
@@ -315,36 +321,22 @@ namespace geolib {
 	 *	geometry_adapter implementation
 		=========================================*/
 
-	geometry_adapter::geometry_adapter(geometry* adaptee, unsigned int normalConfig) {
+	geometry_adapter::geometry_adapter(geometry* adaptee) {
 		_geo_data = adaptee;
-		_normalConfig = normalConfig;
 	}
 	std::vector<GLfloat> geometry_adapter::request_vertices() {
 		std::vector<GLfloat> vertex_data;
-		if (_normalConfig == GEOLIB_FLATNORMALS)
-			for (const auto& current : _geo_data->get_vdata()) {
-				vertex& cpy = *current.get();
-				vertex_data.push_back(cpy.position.x);
-				vertex_data.push_back(cpy.position.y);
-				vertex_data.push_back(cpy.position.z);
-				vertex_data.push_back(cpy.flatNormal.x);
-				vertex_data.push_back(cpy.flatNormal.y);
-				vertex_data.push_back(cpy.flatNormal.z);
-				vertex_data.push_back(cpy.texture.x);
-				vertex_data.push_back(cpy.texture.y);
-			}
-		else if (_normalConfig == GEOLIB_SMOOTHNORMALS)
-			for (const auto& current : _geo_data->get_vdata()) {
-				vertex& cpy = *current.get();
-				vertex_data.push_back(cpy.position.x);
-				vertex_data.push_back(cpy.position.y);
-				vertex_data.push_back(cpy.position.z);
-				vertex_data.push_back(cpy.smoothNormal.x);
-				vertex_data.push_back(cpy.smoothNormal.y);
-				vertex_data.push_back(cpy.smoothNormal.z);
-				vertex_data.push_back(cpy.texture.x);
-				vertex_data.push_back(cpy.texture.y);
-			}
+		for (const auto& current : _geo_data->get_vdata()) {
+			vertex& cpy = *current.get();
+			vertex_data.push_back(cpy.position.x);
+			vertex_data.push_back(cpy.position.y);
+			vertex_data.push_back(cpy.position.z);
+			vertex_data.push_back(cpy.smoothNormal.x);
+			vertex_data.push_back(cpy.smoothNormal.y);
+			vertex_data.push_back(cpy.smoothNormal.z);
+			vertex_data.push_back(cpy.texture.x);
+			vertex_data.push_back(cpy.texture.y);
+		}
 
 		return vertex_data;
 	}

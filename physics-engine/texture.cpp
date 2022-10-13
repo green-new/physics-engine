@@ -1,5 +1,6 @@
 #include "texture.hpp"
 #include "stb_image/stb_image.h"
+#include <iostream>
 
 
 /* Consider this paper for implementation:
@@ -25,15 +26,12 @@ texture_t noise_texture(color_t primary, color_t secondary, uint16_t width, uint
 	for (uint16_t i = 0; i < height; i++)
 		for (uint16_t j = 0; j < width; j++) {
 			double d = perlin.octave2D_01(j * fx, i * fx, octave);
-			float component0 = primary.rgba.red / 255.0f;
-			float component1 = secondary.rgba.red / 255.0f;
-			float component2 = primary.rgba.green / 255.0f;
-			float component3 = secondary.rgba.green / 255.0f;
-			float component4 = primary.rgba.blue / 255.0f;
-			float component5 = secondary.rgba.blue / 255.0f;
-			data[(i * width + j) * Cn + 0] = component0 + component1 * d;
-			data[(i * width + j) * Cn + 1] = component2 + component3 * d;
-			data[(i * width + j) * Cn + 2] = component4 + component5 * d;
+			float r = std::lerp(primary.rgba.red / 255.0f, secondary.rgba.red / 255.0f, d);
+			float g = std::lerp(primary.rgba.green / 255.0f, secondary.rgba.green / 255.0f, d);
+			float b = std::lerp(primary.rgba.blue / 255.0f, secondary.rgba.blue / 255.0f, d);
+			data[(i * width + j) * Cn + 0] = r;
+			data[(i * width + j) * Cn + 1] = g;
+			data[(i * width + j) * Cn + 2] = b;
 			data[(i * width + j) * Cn + 3] = 1.0f;
 		}
 
@@ -130,10 +128,19 @@ texture_t build_texture(std::string filename) {
 	/* Use the stb_image library to load the file. */
 	int width, height, channels;
 	byte* data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
-
+	GLuint internalformat;
+	GLenum format;
+	if (channels == 3) {
+		internalformat = GL_RGB;
+		format = GL_RGB;
+	}
+	else if (channels == 4) {
+		internalformat = GL_RGBA;
+		format = GL_RGBA;
+	}
 	if (data) {
 		/* Loads the pixel data to the image. Says the image data is RGB and this texture will be RGB with 8-bit unsigned data. */
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
@@ -146,20 +153,20 @@ texture_t build_texture(std::string filename) {
 	return id;
 }
 
-color_t build_color(byte r, byte g, byte b, byte a) {
-	uint32_t c = r;
-	c = (c << 8) + g;
+color_t build_colorb(byte r, byte g, byte b, byte a) {
+	uint32_t c = a;
 	c = (c << 8) + b;
-	c = (c << 8) + a;
+	c = (c << 8) + g;
+	c = (c << 8) + r;
 
 	return { c };
 }
 
-color_t build_color(float r, float g, float b, float a) {
+color_t build_colorf(float r, float g, float b, float a) {
 	byte _r = (byte)(r * 255.0f);
 	byte _g = (byte)(g * 255.0f);
 	byte _b = (byte)(b * 255.0f);
 	byte _a = (byte)(a * 255.0f);
 	
-	return build_color(_r, _g, _b, _a);
+	return build_colorb(_r, _g, _b, _a);
 }

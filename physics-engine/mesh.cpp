@@ -44,8 +44,8 @@ void vao::unbind() const {
 ebo::ebo(GLsizeiptr size, const void* data, GLenum target, GLenum usage) : vbo(size, data, target, usage) { }
 ebo::~ebo() {}
 
-mesh::mesh(geolib::geometry* g, std::vector<texture_t> textures, int normalConfig) {
-	geolib::geometry_adapter adapter = geolib::geometry_adapter(g, normalConfig);
+mesh::mesh(geolib::geometry* g, std::vector<texture_t> textures) {
+	geolib::geometry_adapter adapter = geolib::geometry_adapter(g);
 	_vertices = adapter.request_vertices();
 	_indices = adapter.request_faces();
 	_textures = textures;
@@ -67,9 +67,6 @@ mesh::mesh(geolib::geometry* g, std::vector<texture_t> textures, int normalConfi
 mesh::~mesh() {
 	_vertices.clear();
 	_indices.clear();
-	/*delete _vertexBuffer;
-	delete _vertexArray;
-	delete _elementBuffer;*/
 }
 
 /* 
@@ -81,7 +78,6 @@ void mesh::draw(shader& prog) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, _textures[i]);
 	}
-	// vertexArray->bind();
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, (GLsizei)_indices.size(), GL_UNSIGNED_INT, 0);
 }

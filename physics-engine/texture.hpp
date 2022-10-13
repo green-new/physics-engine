@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <cstdint>
+#include <cmath>
 
 using texture_t = GLuint;
 using byte = unsigned char;
@@ -27,10 +28,10 @@ const color_t YELLOW =	{	RED.c | GREEN.c};
 const color_t CYAN =	{	GREEN.c | BLUE.c};
 const color_t MAGENTA =	{	RED.c | BLUE.c };
 const color_t WHITE =	{	0xFFFFFFFF  };
-const color_t BLACK =	{	0x00000000	};
+const color_t BLACK =	{	0xFF000000	};
 
-color_t build_color(float r, float g, float b, float a);
-color_t build_color(byte r, byte g, byte b, byte a);
+color_t build_colorf(float r, float g, float b, float a);
+color_t build_colorb(byte r, byte g, byte b, byte a);
 
 texture_t xor_texture(color_t base, uint16_t width, uint16_t height);
 texture_t solid_colored_texture(color_t color);

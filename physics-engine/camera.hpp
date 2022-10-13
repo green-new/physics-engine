@@ -9,7 +9,7 @@ const float g_sensitivity = 0.1f;
 const float g_yaw = -90.0f;
 const float g_pitch = 0.0f;
 const float g_fov = 70.0f;
-const float g_speed = 1.0f;
+const float g_speed = 0.0125f;
 
 using Direction =
 enum {
@@ -150,7 +150,5 @@ private:
 		// Recalculuate right and up vectors
 		right = glm::normalize(glm::cross(front, worldup));
 		up = glm::normalize(glm::cross(right, front));
-
-		// Update the bounding box positions
 	}
 };

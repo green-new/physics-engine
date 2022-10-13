@@ -25,12 +25,12 @@ namespace geolib {
 	struct vertex {
 		glm::vec3 position;
 		glm::vec2 texture;
-		glm::vec3 flatNormal;
 		glm::vec3 smoothNormal;
 	};
 	typedef std::shared_ptr<vertex> dynamic_vertex;
 	struct face {
 		glm::ivec3 indices;
+		glm::vec3 flatNormal;
 	};
 	typedef std::shared_ptr<face> dynamic_face;
 	class geometry {
@@ -131,10 +131,9 @@ namespace geolib {
 	/* Adapter class for retrieving GL appropriate data. */
 	class geometry_adapter {
 	public:
-		geometry_adapter(geometry* adaptee, unsigned int normalConfig);
+		geometry_adapter(geometry* adaptee);
 		std::vector<GLfloat> request_vertices();
 		std::vector<GLuint> request_faces();
 		geometry* _geo_data; 
-		unsigned int _normalConfig;
 	};
 }

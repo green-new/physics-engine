@@ -19,7 +19,7 @@ struct attribute {
 inline std::vector<attribute> DEFAULT_ATTRIBUTES = {
 	{0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0},
 	{1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))},
-	{2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))}
+	{2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))}
 };
 
 class attribute_list {
@@ -72,7 +72,7 @@ public:
 
 class mesh {
 public:
-	mesh(geolib::geometry* g, std::vector<texture_t> textures, int normalConfig);
+	mesh(geolib::geometry* g, std::vector<texture_t> textures);
 	~mesh();
 	void draw(shader& prog);
 private:
