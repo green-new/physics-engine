@@ -154,6 +154,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="FS_transform.glsl" />
+    <None Include="skybox.frag" />
+    <None Include="skybox.vert" />
     <None Include="VS_transform.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

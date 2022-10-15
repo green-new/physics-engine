@@ -15,30 +15,22 @@ struct attribute {
 	const void* pointer;
 };
 
-/* Default interleaved position, normal, texture coordinates. */
-inline std::vector<attribute> DEFAULT_ATTRIBUTES = {
-	{0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0},
-	{1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))},
-	{2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))}
+/* Default attributes. */
+inline const std::vector<attribute> DEFAULT_ATTRIBUTES = {
+	{0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0},
+	{1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0}
 };
 
-class attribute_list {
-public:
-	attribute_list(attribute* a);
-	~attribute_list() = default;
-	void add_attribute(attribute* a);
-	void del_attribute(attribute* a);
-private:
-	attribute* head;
-};
-
+/* The general buffer_object.
+Interherited by vbo and vao.
+Encapsulates its buffer object value, with some gets and binds (changes based on implementation).
+destructor is virtual so it is called when a child is destroyed (the same for all children -> glDeleteBuffers(1, &_object)). */
 class buffer_object {
 public:
 	GLuint* get();
 	virtual void bind() const = 0;
 	virtual void unbind() const = 0;
-
-	virtual ~buffer_object() = default;
+	virtual ~buffer_object();
 protected:
 	GLuint _object;
 };
@@ -46,28 +38,24 @@ protected:
 /* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferData.xhtml */
 class vbo : public buffer_object {
 public:
-	vbo(GLsizeiptr size, const void* data, GLenum target = GL_ARRAY_BUFFER, GLenum usage = GL_STATIC_DRAW);
-	// Declaring destructor virtual runs derived destructor -> base destructor (here).
-	virtual ~vbo();
-	virtual void bind() const;
-	virtual void unbind() const;
+	vbo(GLenum usage = GL_STREAM_DRAW, GLenum target = GL_ARRAY_BUFFER);
+	virtual void bind() const override;
+	virtual void unbind() const override;
+	void bind_data(GLsizeiptr new_size, const void* new_data);
 private:
-	GLenum _target;
+	const GLenum _target;
+	const GLenum _usage;
 };
 
 /* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glVertexAttribPointer.xhtml */
 class vao : public buffer_object {
 public:
 	vao(std::vector<attribute> attributes = DEFAULT_ATTRIBUTES);
-	virtual ~vao();
-	virtual void bind() const;
-	virtual void unbind() const;
-};
-
-class ebo : public vbo {
-public:
-	ebo(GLsizeiptr size, const void* data, GLenum target = GL_ELEMENT_ARRAY_BUFFER, GLenum usage = GL_STATIC_DRAW);
-	virtual ~ebo();
+	virtual void bind() const override;
+	virtual void unbind() const override;
+	void config_attributes();
+private:
+	std::vector<attribute> _attributes;
 };
 
 class mesh {
@@ -75,14 +63,20 @@ public:
 	mesh(geolib::geometry* g, std::vector<texture_t> textures);
 	~mesh();
 	void draw(shader& prog);
+	void swap();
 private:
-	std::vector<GLfloat> _vertices;
-	std::vector<GLuint> _indices;
+	geolib::adapter_GLdata _data;
 	std::vector<texture_t> _textures;
 
-	vbo* _vertexBuffer;
+	vbo* _positionBuffer;
+	vbo* _positionBufferSmoothed;
+	vbo* _normalBuffer;
+	vbo* _normalBufferSmoothed;
 	vao* _vertexArray;
-	ebo* _elementBuffer;
+	vao* _vertexArraySmoothed;
 
-	unsigned int VAO, VBO, EBO;
+	GLsizei vertex_count();
+
+	// True for facted, false for smoothed.
+	bool flatNormalsOrSmoothedNormals;
 };

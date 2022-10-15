@@ -18,14 +18,12 @@
 /* Triangulation is a relatively expensive operation.
 For procedurally generated geometry, a face can only have 12 sides. */
 #define GEOLIB_MAX_POLYGON_SIDES	12
-#define GEOLIB_FLATNORMALS			0x01
-#define GEOLIB_SMOOTHNORMALS		0x02
 
 namespace geolib {
 	struct vertex {
 		glm::vec3 position;
+		glm::vec3 normal;
 		glm::vec2 texture;
-		glm::vec3 smoothNormal;
 	};
 	typedef std::shared_ptr<vertex> dynamic_vertex;
 	struct face {
@@ -33,6 +31,12 @@ namespace geolib {
 		glm::vec3 flatNormal;
 	};
 	typedef std::shared_ptr<face> dynamic_face;
+	/* The geometry class is responsible for loading 3D data and representing them as triangle meshes,
+	keeping a list of vertices and face information. 
+	It encapsulates each vertex object into a shared_ptr, so that each vertex is guaranteed to be destroyed once its 
+	parent geometry object's destructor is called. 
+	This is so we don't have to loop through each vector of vertices and faces and delete them, which could be memory unsafe. 
+	https://stackoverflow.com/questions/6072192/deleting-dynamically-allocated-memory-from-a-map */
 	class geometry {
 	public:
 		geometry();
@@ -63,6 +67,8 @@ namespace geolib {
 		std::vector<dynamic_face> faces;
 	};
 
+	/* Simple implementation of the Builder strategy in C++. 
+	Can be inherited and each implementation will build from the child geometry _g object. */
 	class geometry_creator {
 	public:
 		/* Return by value.
@@ -76,12 +82,15 @@ namespace geolib {
 		geometry _g;
 	};
 
+	/* The objreader_strategy interface. */
 	template<class T>
 	class objreader_strategy {
 	public:
 		virtual T execute(std::stringstream& stream) = 0;
 	};
 
+	/* The vec strategy interface for use with reading .obj files. 
+	It will read from the stream L elements of type S and return it as a glm::vec. */
 	template<int L, class S>
 	class vec_strategy : objreader_strategy<glm::vec<L, S>>{
 	private:
@@ -93,6 +102,7 @@ namespace geolib {
 		virtual glm::vec<L, S> execute(std::stringstream& stream);
 	};
 
+	/* Responsible for reading simple geometric information from a .obj file. */
 	class geometry_obj : public geometry_creator {
 	private:
 		std::string filename;
@@ -115,25 +125,36 @@ namespace geolib {
 		~geometry_obj();
 	};
 
+	/* Generate geometry procedurally.
+	This is currently used to create the plane, cube, and sphere meshes. */
 	class geometry_procedural : public geometry_creator {
 	public:
 		geometry_procedural();
-		unsigned int add_vertex(float v0, float v1, float v2);
 		void set_smooth_normal(unsigned int idx, float v0, float v1, float v2);
 		void set_flat_normal(unsigned int idx, float v0, float v1, float v2);
 		void set_normal(unsigned int idx, float v0, float v1, float v2);
+		unsigned int add_vertex(float v0, float v1, float v2);
 		void add_texture(unsigned int idx, float u, float v);
 		void add_triangle(unsigned int i0, unsigned int i1, unsigned int i2);
 		void add_quad(unsigned int i0, unsigned int i1, unsigned int i2, unsigned int i3);
 		void add_polygon(unsigned int is[GEOLIB_MAX_POLYGON_SIDES], unsigned int n);
 	};
-
-	/* Adapter class for retrieving GL appropriate data. */
+	/* For use with the adapter strategy. */
+	struct adapter_GLdata {
+		std::vector<GLfloat> smooth_vertices;
+		std::vector<GLfloat> flat_vertices;
+		std::vector<GLfloat> flat_normals;
+		std::vector<GLfloat> smooth_normals;
+	};
+	/* Adapter class for retrieving GL appropriate data. 
+	Adapter design pattern. Takes geometry data, which is difficult to read properly from a GL perspective.
+	Therefore, we retrieve the data in terms of GL so it can be seamlessly read by glBufferData, etc. 
+	That way, we can keep the geometry class specific to 3D geometry data and disregard anything to do with a GL context. 
+	Therefore, loading of geometric information could be ran on a different thread without a GL context, but this is probably not necessary. */
 	class geometry_adapter {
 	public:
 		geometry_adapter(geometry* adaptee);
-		std::vector<GLfloat> request_vertices();
-		std::vector<GLuint> request_faces();
+		adapter_GLdata request_data();
 		geometry* _geo_data; 
 	};
 }

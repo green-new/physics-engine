@@ -2,7 +2,10 @@
 #include <fstream>
 #include <string>
 #include "shader.hpp"
-
+// Inspiration from https://learnopengl.com/Getting-started/Shaders.
+// Shaders are very boilerplatey. We have to do quite a bit before they are functional.
+// A little deviation using glm's own datatypes.
+// Therefore, in order to use this library, glm must be included. This isnt optimal for other programs.
 /*
 	Functions
 */
