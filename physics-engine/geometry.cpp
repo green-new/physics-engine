@@ -2,56 +2,56 @@
 
 namespace geolib {
 
-	geometry::geometry() { 
+	Geometry3D::Geometry3D() {
 		vertices = std::vector<dynamic_vertex>();
 		faces = std::vector<dynamic_face>();
 	}
-	geometry::~geometry() { 
+	Geometry3D::~Geometry3D() {
 		clear();
 	}
-	void geometry::add_vertex(vertex v) {
+	void Geometry3D::add_vertex(vertex v) {
 		vertices.push_back(dynamic_vertex(new vertex(v)));
 	}
-	void geometry::add_face(face f) {
+	void Geometry3D::add_face(face f) {
 		faces.push_back(dynamic_face(new face(f)));
 	}
-	void geometry::remove_vertex(unsigned int idx) {
+	void Geometry3D::remove_vertex(unsigned int idx) {
 		vertices.erase(vertices.begin() + idx);
 	}
-	void geometry::remove_face(unsigned int idx) {
+	void Geometry3D::remove_face(unsigned int idx) {
 		faces.erase(faces.begin() + idx);
 	}
-	const std::vector<dynamic_vertex>& geometry::get_vdata() {
+	const std::vector<dynamic_vertex>& Geometry3D::get_vdata() {
 		return vertices;
 	}
-	const std::vector<dynamic_face>& geometry::get_fdata() {
+	const std::vector<dynamic_face>& Geometry3D::get_fdata() {
 		return faces;
 	}
-	vertex& geometry::get_vertex(unsigned int idx) {
+	vertex& Geometry3D::get_vertex(unsigned int idx) {
 		return *vertices.at(idx).get();
 	}
-	face& geometry::get_face(unsigned int idx) {
+	face& Geometry3D::get_face(unsigned int idx) {
 		return *faces.at(idx).get();
 	}
 	/*
 	Determines if this geometry is empty (no vertices and no faces).
 	this is a const reference.
 	*/
-	bool geometry::is_empty() const {
+	bool Geometry3D::is_empty() const {
 		return vertices.empty() && faces.empty();
 	}
 	/*
 	Gets the face count of this geometry.
 	@return unsigned int Number of faces.
 	*/
-	unsigned int geometry::get_face_count() {
+	unsigned int Geometry3D::get_face_count() {
 		return (unsigned int)faces.size();
 	}
 	/*
 	Gets the vertex count of this geometry.
 	@return unsigned int Number of vertices.
 	*/
-	unsigned int geometry::get_vertex_count() {
+	unsigned int Geometry3D::get_vertex_count() {
 		return (unsigned int)vertices.size();
 	}
 	/*
@@ -59,7 +59,7 @@ namespace geolib {
 	If they are already precomputed (e.g., from file) this function is exited.
 	Algorithm from https://computergraphics.stackexchange.com/questions/4031/programmatically-generating-vertex-normals
 	*/
-	void geometry::calc_normals() {
+	void Geometry3D::calc_normals() {
 		// Set all normals to zero if swapping to smooth shading
 		for (auto& v : vertices) {
 			vertex& vcpy = *v.get();
@@ -104,7 +104,7 @@ namespace geolib {
 	so we don't need to generate UV coordinates, and can simply infer them from 
 	local vertex coordinates and normals. This would be done in the shader program. 
 	*/
-	void geometry::calc_textures() {
+	void Geometry3D::calc_textures() {
 		for (auto& f : faces) {
 			const face& fcpy = *f.get();
 			vertex& A = get_vertex(fcpy.indices[0]);
@@ -116,7 +116,7 @@ namespace geolib {
 		}
 
 	}
-	void geometry::clear() {
+	void Geometry3D::clear() {
 		vertices.clear();
 		faces.clear();
 	}
@@ -163,7 +163,7 @@ namespace geolib {
 	}
 	/* Builds the current geometry context for this geometry creator.
 	Simply calculates normals and textures if they haven't been defined yet. */
-	geometry geometry_creator::build() {
+	Geometry3D GeometryBuilder::build() {
 		if (!normalsWerePredefined) _g.calc_normals();
 		if (!texturesWerePredefined) _g.calc_textures();
 		return _g;
@@ -321,7 +321,7 @@ namespace geolib {
 		}
 	}
 
-	geometry_adapter::geometry_adapter(geometry* adaptee) {
+	geometry_adapter::geometry_adapter(Geometry3D* adaptee) {
 		_geo_data = adaptee;
 	}
 	/* Gets the GL appropriate data from the current geometry context.

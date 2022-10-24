@@ -16,7 +16,7 @@ namespace registry {
 	Therefore, we need to follow RAII principles by encapsulating their creation in a shared_ptr object. 
 	https://stackoverflow.com/questions/6072192/deleting-dynamically-allocated-memory-from-a-map*/
 	template<class T>
-	class registrar {
+	class Resource {
 	public:
 		T& get(const std::string& uri) const {
 			if (_map.contains(uri))
@@ -43,9 +43,9 @@ namespace registry {
 		std::unordered_map<std::string, std::shared_ptr<T>> _map;
 	};
 
-	class geometry_registrar : public registrar<geolib::geometry> {
+	class GeometryResources : public Resource<geolib::Geometry3D> {
 	public:
-		geometry_registrar() {
+		GeometryResources() {
 			// OBJ file loads.
 			std::cout << "[Registry] Generating geometries..." << std::endl;
 			add("tetrahedron", geolib::geometry_obj("models/tetrahedron.obj").build());
@@ -133,16 +133,17 @@ namespace registry {
 			geolib::geometry_procedural terrain;
 			uint32_t seed = (uint32_t)time(NULL);
 			const siv::PerlinNoise perlin{ seed };
-			int width = 512, height = 512;
-			int depth = 100.0f;
+			int width = 256, height = 256;
+			int depth = 100;
+			uint32_t oct0 = 4;
 			const double fx = (1.0f / width);
 			const double fy = (1.0f / height);
 			for (int x = -width; x < width; x++) {
 				for (int y = -height; y < height; y++) {
-					double d0 = perlin.octave2D_01(fx * x, fy * y, 4);
-					double d1 = perlin.octave2D_01(fx * x, fy * (y + 1), 4);
-					double d2 = perlin.octave2D_01(fx * (x + 1), fy * y, 4);
-					double d3 = perlin.octave2D_01(fx * (x + 1), fy * (y + 1), 4);
+					double d0 = perlin.octave2D_01(fx * x, fy * y, oct0);
+					double d1 = perlin.octave2D_01(fx * x, fy * (y + 1), oct0);
+					double d2 = perlin.octave2D_01(fx * (x + 1), fy * y, oct0);
+					double d3 = perlin.octave2D_01(fx * (x + 1), fy * (y + 1), oct0);
 					unsigned int i0 = terrain.add_vertex(x, d0 * depth, y);
 					unsigned int i1 = terrain.add_vertex(x, d1 * depth, y + 1);
 					unsigned int i2 = terrain.add_vertex(x + 1, d2 * depth, y);
@@ -156,24 +157,24 @@ namespace registry {
 		}
 	};
 
-	class shader_registrar : public registrar<shader> {
+	class ShaderResources : public Resource<shader> {
 	public:
-		shader_registrar() {
+		ShaderResources() {
 			std::cout << "[Registry] Generating shaders..." << std::endl;
-			shader VS_transform = shader("VS_transform.glsl", "FS_transform.glsl");
+			shader VS_transform = shader("shaders/VS_transform.glsl", "shaders/FS_transform.glsl");
 			add("VS_transform", VS_transform);
-			shader skybox = shader("skybox.vert", "skybox.frag");
+			shader skybox = shader("shaders/skybox.vert", "shaders/skybox.frag");
 			add("skybox", skybox);
 		}
-		~shader_registrar() {
+		~ShaderResources() {
 			// Shared pointers are released automatically with std::shared_ptr.
 			
 		}
 	};
 
-	class texture_registrar : public registrar<texture_t> {
+	class TextureResources : public Resource<texture_t> {
 	public:
-		texture_registrar() {
+		TextureResources() {
 			std::cout << "[Registry] Generating textures..." << std::endl;
 			// Procedural textures.
 			float freq = 8.0f;
@@ -203,7 +204,7 @@ namespace registry {
 			// Texutres from file!
 			add("castle_walls_short.png", build_texture("textures/castle_walls_short.png"));
 		}
-		~texture_registrar() {
+		~TextureResources() {
 			// We need to delete the GL textures associated in this map.
 			// We need to loop through them all which is O(n) time.
 			// OpenGL cleans up after itself after all contexts referring
@@ -223,26 +224,26 @@ namespace registry {
 	// GLResources would handle all GL objects (textures, buffer objects, wayyy more perhaps) and run in a GL thread/context.
 	// Also, optimally, this class should be static (it could be singleton, but singleton is way overrused and incorrectly!)
 	// However, static isn't thread safe without mutexes.
-	class registry final {
+	class ResourceManager final {
 	public:
-		texture_t& get_texture(std::string name) {
-			return texture_registry.get(name);
+		void init() {
+			Textures = std::make_unique<TextureResources>();
+			Geometries = std::make_unique<GeometryResources>();
+			Shaders = std::make_unique<ShaderResources>();
 		}
-		geolib::geometry& get_geometry(std::string name) {
-			return geometry_registry.get(name);
+		texture_t& getTexture(std::string name) {
+			return Textures->get(name);
 		}
-		shader& get_shader(std::string name) {
-			return shader_registry.get(name);
+		geolib::Geometry3D& getGeometry(std::string name) {
+			return Geometries->get(name);
 		}
-		registry() {
-
+		Shader& getShader(std::string name) {
+			return Shaders->get(name);
 		}
-		~registry() {
-
-		}
+		~ResourceManager() = default;
 	private:
-		texture_registrar texture_registry;
-		geometry_registrar geometry_registry;
-		shader_registrar shader_registry;
+		std::unique_ptr<TextureResources> Textures;
+		std::unique_ptr<GeometryResources> Geometries;
+		std::unique_ptr<ShaderResources> Shaders;
 	};
 };

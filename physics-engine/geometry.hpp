@@ -37,10 +37,10 @@ namespace geolib {
 	parent geometry object's destructor is called. 
 	This is so we don't have to loop through each vector of vertices and faces and delete them, which could be memory unsafe. 
 	https://stackoverflow.com/questions/6072192/deleting-dynamically-allocated-memory-from-a-map */
-	class geometry {
+	class Geometry3D {
 	public:
-		geometry();
-		~geometry();
+		Geometry3D();
+		~Geometry3D();
 
 		unsigned int get_face_count();
 		unsigned int get_vertex_count();
@@ -69,17 +69,17 @@ namespace geolib {
 
 	/* Simple implementation of the Builder strategy in C++. 
 	Can be inherited and each implementation will build from the child geometry _g object. */
-	class geometry_creator {
+	class GeometryBuilder {
 	public:
 		/* Return by value.
 		_g is not allocated dynamically. */
-		geometry build();
+		Geometry3D build();
 	protected:
 		bool normalsWerePredefined;
 		bool texturesWerePredefined;
 		/* Not allocated dynamically. 
 		Will be deleted in destructor automatically. */
-		geometry _g;
+		Geometry3D _g;
 	};
 
 	/* The objreader_strategy interface. */
@@ -103,7 +103,7 @@ namespace geolib {
 	};
 
 	/* Responsible for reading simple geometric information from a .obj file. */
-	class geometry_obj : public geometry_creator {
+	class geometry_obj : public GeometryBuilder {
 	private:
 		std::string filename;
 		std::fstream file;
@@ -127,7 +127,7 @@ namespace geolib {
 
 	/* Generate geometry procedurally.
 	This is currently used to create the plane, cube, and sphere meshes. */
-	class geometry_procedural : public geometry_creator {
+	class geometry_procedural : public GeometryBuilder {
 	public:
 		geometry_procedural();
 		void set_smooth_normal(unsigned int idx, float v0, float v1, float v2);
@@ -153,8 +153,8 @@ namespace geolib {
 	Therefore, loading of geometric information could be ran on a different thread without a GL context, but this is probably not necessary. */
 	class geometry_adapter {
 	public:
-		geometry_adapter(geometry* adaptee);
+		geometry_adapter(Geometry3D* adaptee);
 		adapter_GLdata request_data();
-		geometry* _geo_data; 
+		Geometry3D* _geo_data;
 	};
 }

@@ -29,13 +29,13 @@ typedef GLuint PROGRAM;
 	Classes
 */
 
-class shader
+class Shader
 {
 public:
 	PROGRAM id;
 
 	/* Constructor */
-	shader(const char* vertex_path, const char* fragment_path);
+	Shader(const char* vertex_path, const char* fragment_path);
 
 	void use();
 	void del();
@@ -47,9 +47,3 @@ public:
 	void set_vec3(const std::string& name, float x, float y, float z);
 };
 
-/*
-	Externs (globals)
-*/
-
-/* Defined in gfx.cpp */
-extern struct Renderer GameRenderer;

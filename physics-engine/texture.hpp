@@ -39,7 +39,7 @@ const color_t BLUE = { 0xFFFF0000 };
 const color_t YELLOW = { RED.c | GREEN.c };
 const color_t CYAN = { GREEN.c | BLUE.c };
 const color_t MAGENTA = { RED.c | BLUE.c };
-const color_t ORANGE = { build_colorb(255, 110, 0, 255).c };
+const color_t ORANGE = { build_colorb(255, 128, 0, 255).c };
 const color_t WHITE = { 0xFFFFFFFF };
 const color_t BLACK = { 0xFF000000 };
 

@@ -105,39 +105,6 @@ public:
 
 		update();
 	}
-
-	void tick(float time) {
-		// Check for collisions (if no noclip)
-		// If true collisions, clip velocity
-
-		// Apply gravity
-		//this->force += this->theworld->gravity;
-
-		// Apply force to velocity
-		this->velocity += this->force / time;
-
-		// Finally, update position;
-		this->position += this->velocity * time;
-
-		// If velocity is sub zero, set it to zero
-		if (this->velocity.x < 0.001f && this->velocity.x > -0.001f) {
-			this->velocity.x = 0.0f;
-		}
-
-		if (this->velocity.y < 0.001f && this->velocity.y > -0.001f) {
-			this->velocity.y = 0.0f;
-		}
-
-		if (this->velocity.z < 0.001f && this->velocity.z > -0.001f) {
-			this->velocity.z = 0.0f;
-		}
-
-		// Decrease velocity
-		this->velocity -= this->velocity * 0.10f;
-
-		// Reset force
-		this->force = glm::vec3(0.0f);
-	}
 private:
 	void update() {
 		glm::vec3 newfront;

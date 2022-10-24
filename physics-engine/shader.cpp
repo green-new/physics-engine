@@ -33,7 +33,7 @@ GLint get_shader_link_status(unsigned int shader)
 	return success;
 }
 
-shader::shader(const char* vertex_path, const char* fragment_path)
+Shader::Shader(const char* vertex_path, const char* fragment_path)
 {
 	// 1. Retrieve the vertex/fragment source code from filepath
 	std::string svertex;
@@ -107,40 +107,40 @@ shader::shader(const char* vertex_path, const char* fragment_path)
 	glDeleteShader(fragment);
 }
 
-void shader::del()
+void Shader::del()
 {
 	glDeleteProgram(id);
 }
 
-void shader::use()
+void Shader::use()
 {
 	glUseProgram(id);
 }
 
-void shader::set_bool(const std::string& name, bool value) const
+void Shader::set_bool(const std::string& name, bool value) const
 {
 	glUniform1i(glGetUniformLocation(id, name.c_str()), (int)value);
 }
-void shader::set_int(const std::string& name, int value) const
+void Shader::set_int(const std::string& name, int value) const
 {
 	glUniform1i(glGetUniformLocation(id, name.c_str()), value);
 }
-void shader::set_float(const std::string& name, float value) const
+void Shader::set_float(const std::string& name, float value) const
 {
 	glUniform1f(glGetUniformLocation(id, name.c_str()), value);
 }
 
-void shader::set_mat4(const std::string& name, glm::mat4 mat)
+void Shader::set_mat4(const std::string& name, glm::mat4 mat)
 {
 	glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-void shader::set_vec3(const std::string& name, glm::vec3 vec)
+void Shader::set_vec3(const std::string& name, glm::vec3 vec)
 {
 	glUniform3fv(glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr(vec));
 }
 
-void shader::set_vec3(const std::string& name, float x, float y, float z)
+void Shader::set_vec3(const std::string& name, float x, float y, float z)
 {
 	glm::vec3 vec(x, y, z);
 	glUniform3fv(glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr(vec));

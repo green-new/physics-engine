@@ -145,10 +145,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.hpp" />
+    <ClInclude Include="components.hpp" />
+    <ClInclude Include="coordinator.hpp" />
+    <ClInclude Include="entity.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="mesh.hpp" />
     <ClInclude Include="resource.hpp" />
     <ClInclude Include="shader.hpp" />
+    <ClInclude Include="signatures.hpp" />
+    <ClInclude Include="skybox.hpp" />
+    <ClInclude Include="system.hpp" />
     <ClInclude Include="texture.hpp" />
     <ClInclude Include="window.hpp" />
   </ItemGroup>
