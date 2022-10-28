@@ -9,9 +9,8 @@ static float skyboxVertices[] = { -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f
 
 class Skybox {
 public:
-    Skybox(glm::mat4 _projectionMatrix, Shader& _shaderProgram, texture_t _skyboxTexture) {
+    Skybox(glm::mat4 _projectionMatrix, texture_t _skyboxTexture) : mSkyboxShader(_shaderProgram) {
         mProjectionMatrix = _projectionMatrix;
-        mSkyboxShader = _shaderProgram;
         mSkyboxTexture = _skyboxTexture;
     }
     void init() {

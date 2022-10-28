@@ -21,16 +21,16 @@ namespace geolib {
 	void Geometry3D::remove_face(unsigned int idx) {
 		faces.erase(faces.begin() + idx);
 	}
-	const std::vector<dynamic_vertex>& Geometry3D::get_vdata() {
+	const std::vector<dynamic_vertex>& Geometry3D::get_vdata() const {
 		return vertices;
 	}
-	const std::vector<dynamic_face>& Geometry3D::get_fdata() {
+	const std::vector<dynamic_face>& Geometry3D::get_fdata() const {
 		return faces;
 	}
-	vertex& Geometry3D::get_vertex(unsigned int idx) {
+	vertex& Geometry3D::get_vertex(unsigned int idx) const {
 		return *vertices.at(idx).get();
 	}
-	face& Geometry3D::get_face(unsigned int idx) {
+	face& Geometry3D::get_face(unsigned int idx) const {
 		return *faces.at(idx).get();
 	}
 	/*
@@ -321,21 +321,20 @@ namespace geolib {
 		}
 	}
 
-	geometry_adapter::geometry_adapter(Geometry3D* adaptee) {
-		_geo_data = adaptee;
+	GLDataAdapter::GLDataAdapter(const Geometry3D& adaptee) : mGeoData(adaptee) {
 	}
 	/* Gets the GL appropriate data from the current geometry context.
 	We have to loop through the faces, not the vertices, because the faces 
 	contain the correct order for which the vertices are drawn.
 	This is important because we have no EBO (index buffer) implementation due to its complexity with 
 	changing vertex size and normal size when swapping from flat and smooth normals. */
-	adapter_GLdata geometry_adapter::request_data() {
-		adapter_GLdata g;
-		for (const auto& current : _geo_data->get_fdata()) {
+	GLData GLDataAdapter::requestData() {
+		GLData g;
+		for (const auto& current : mGeoData.get_fdata()) {
 			face& cpy = *current.get();
-			vertex& A = _geo_data->get_vertex(cpy.indices.x);
-			vertex& B = _geo_data->get_vertex(cpy.indices.y);
-			vertex& C = _geo_data->get_vertex(cpy.indices.z);
+			vertex& A = mGeoData.get_vertex(cpy.indices.x);
+			vertex& B = mGeoData.get_vertex(cpy.indices.y);
+			vertex& C = mGeoData.get_vertex(cpy.indices.z);
 			g.smooth_vertices.push_back(A.position.x);
 			g.smooth_vertices.push_back(A.position.y);
 			g.smooth_vertices.push_back(A.position.z);
@@ -355,11 +354,11 @@ namespace geolib {
 			g.smooth_normals.push_back(C.normal.y);
 			g.smooth_normals.push_back(C.normal.z);
 		}
-		for (const auto& current : _geo_data->get_fdata()) {
+		for (const auto& current : mGeoData.get_fdata()) {
 			face& cpy = *current.get();
-			vertex& A = _geo_data->get_vertex(cpy.indices.x);
-			vertex& B = _geo_data->get_vertex(cpy.indices.y);
-			vertex& C = _geo_data->get_vertex(cpy.indices.z);
+			vertex& A = mGeoData.get_vertex(cpy.indices.x);
+			vertex& B = mGeoData.get_vertex(cpy.indices.y);
+			vertex& C = mGeoData.get_vertex(cpy.indices.z);
 			g.flat_normals.push_back(cpy.flatNormal.x);
 			g.flat_normals.push_back(cpy.flatNormal.y);
 			g.flat_normals.push_back(cpy.flatNormal.z);

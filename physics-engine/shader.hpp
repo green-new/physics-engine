@@ -37,13 +37,13 @@ public:
 	/* Constructor */
 	Shader(const char* vertex_path, const char* fragment_path);
 
-	void use();
-	void del();
+	void use() const;
+	void del() const;
 	void set_bool(const std::string& name, bool value) const;
 	void set_int(const std::string& name, int value) const;
 	void set_float(const std::string& name, float value) const;
-	void set_mat4(const std::string& name, glm::mat4 mat);
-	void set_vec3(const std::string& name, glm::vec3 vec3);
-	void set_vec3(const std::string& name, float x, float y, float z);
+	void set_mat4(const std::string& name, glm::mat4 mat) const;
+	void set_vec3(const std::string& name, glm::vec3 vec3) const;
+	void set_vec3(const std::string& name, float x, float y, float z) const;
 };
 

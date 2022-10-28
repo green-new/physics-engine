@@ -18,7 +18,7 @@ namespace registry {
 	template<class T>
 	class Resource {
 	public:
-		T& get(const std::string& uri) const {
+		const T& get(const std::string& uri) const {
 			if (_map.contains(uri))
 				return *_map.at(uri).get();
 			else
@@ -31,11 +31,11 @@ namespace registry {
 			_map.insert( { uri, std::shared_ptr<T>(new T(object)) } );
 		}
 	protected:
-		registrar() {
+		Resource() {
 			_map = std::unordered_map<std::string, std::shared_ptr<T>>();
 			_map.clear();
 		}
-		virtual ~registrar() {
+		~Resource() {
 			// Map consists of shared ptr.
 			// Elements will be automatically deallocated on program exit.
 			_map.clear();
@@ -157,13 +157,13 @@ namespace registry {
 		}
 	};
 
-	class ShaderResources : public Resource<shader> {
+	class ShaderResources : public Resource<Shader> {
 	public:
 		ShaderResources() {
 			std::cout << "[Registry] Generating shaders..." << std::endl;
-			shader VS_transform = shader("shaders/VS_transform.glsl", "shaders/FS_transform.glsl");
+			Shader VS_transform = Shader("shaders/VS_transform.glsl", "shaders/FS_transform.glsl");
 			add("VS_transform", VS_transform);
-			shader skybox = shader("shaders/skybox.vert", "shaders/skybox.frag");
+			Shader skybox = Shader("shaders/skybox.vert", "shaders/skybox.frag");
 			add("skybox", skybox);
 		}
 		~ShaderResources() {
@@ -231,13 +231,13 @@ namespace registry {
 			Geometries = std::make_unique<GeometryResources>();
 			Shaders = std::make_unique<ShaderResources>();
 		}
-		texture_t& getTexture(std::string name) {
+		const texture_t& getTexture(std::string name) {
 			return Textures->get(name);
 		}
-		geolib::Geometry3D& getGeometry(std::string name) {
+		const Geometry3D& getGeometry(std::string name) {
 			return Geometries->get(name);
 		}
-		Shader& getShader(std::string name) {
+		const Shader& getShader(std::string name) {
 			return Shaders->get(name);
 		}
 		~ResourceManager() = default;

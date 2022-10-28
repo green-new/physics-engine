@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Green\source\repos\physics-engine\physics-engine\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Green\source\repos\physics-engine\physics-engine\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\frogf\Desktop\Year 3\Capstone\SkillDevelopment1\physics-engine\physics-engine\include;C:\Users\Green\source\repos\physics-engine\physics-engine\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\frogf\Desktop\Year 3\Capstone\SkillDevelopment1\physics-engine\physics-engine\lib;C:\Users\Green\source\repos\physics-engine\physics-engine\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

@@ -1,6 +1,14 @@
 #pragma once
 #include <set>
 #include "entity.hpp"
+#include "skybox.hpp"
+#include "coordinator.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+extern Coordinator gCoordinator;
+extern std::unique_ptr<registry::ResourceManager> resourceManager;
 
 class System {
 public:
@@ -9,21 +17,45 @@ public:
 };
 
 namespace Systems {
+	using namespace glm;
 	class RenderSystem : public System {
 	public:
+		RenderSystem() : mShaderObject(resourceManager->getShader("transform")) {
+			mCamera = gCoordinator.createEntity();
+			gCoordinator.addComponent(mCamera, Components::Orientation{
+				.Front = vec3(0.0f, 0.0f, 1.0f),
+				.Up = vec3(0.0f, 1.0f, 0.0f),
+				.Right = vec3(1.0f, 0.0f, 0.0f)
+			});
+			gCoordinator.addComponent(mCamera, Components::Transform{
+				.Position = vec3(0.0f, 0.0f, 0.0f),
+				.Rotation = vec3(0.0f, 0.0f, 0.0f),
+				.Scale = vec3(1.0f, 1.0f, 1.0f),
+				.Angle = 0.0f
+			});
+			gCoordinator.addComponent(mCamera, Components::Camera{
+				.
+				});
+		}
+		void drawSkybox() {
+			// mSkybox.draw();
+		}
 		void update(float deltaTime) override {
 			for (Entity entity : mEntities) {
-				auto appearance = gCoordinator.getComponent<Components::Appearence>(entity);
-				auto transform = gCoordinator.getComponent<Components::Transform>(entity);
-				auto shape = gCoordinator.getComponent<Components::RenderShape>(entity);
+				auto const& appearance = gCoordinator.getComponent<Components::Appearence>(entity);
+				auto const& transform = gCoordinator.getComponent<Components::Transform>(entity);
+				auto const& shape = gCoordinator.getComponent<Components::RenderShape>(entity);
 				glm::mat4 model = glm::mat4(1.0f);
 				model = glm::translate(model, transform.Position);
 				model = glm::rotate(model, transform.Angle, transform.Rotation);
 				model = glm::scale(model, transform.Scale);
-				shader.set_mat4("model", model);
-				shape.Shape.draw(shader);
+				shape.Shape.draw(mShaderObject);
 			}
 		}
+	private:
+		Entity mCamera;
+		Skybox mSkybox;
+		const Shader& mShaderObject;
 	};
 
 	class PhysicsSystem : public System {

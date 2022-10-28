@@ -51,11 +51,11 @@ namespace geolib {
 		void remove_vertex(unsigned int idx);
 		void remove_face(unsigned int idx);
 
-		const std::vector<dynamic_vertex>& get_vdata();
-		const std::vector<dynamic_face>& get_fdata();
+		const std::vector<dynamic_vertex>& get_vdata() const;
+		const std::vector<dynamic_face>& get_fdata() const;
 
-		vertex& get_vertex(unsigned int idx);
-		face& get_face(unsigned int idx);
+		vertex& get_vertex(unsigned int idx) const;
+		face& get_face(unsigned int idx) const;
 
 		void clear();
 		void calc_normals();
@@ -140,7 +140,7 @@ namespace geolib {
 		void add_polygon(unsigned int is[GEOLIB_MAX_POLYGON_SIDES], unsigned int n);
 	};
 	/* For use with the adapter strategy. */
-	struct adapter_GLdata {
+	struct GLData {
 		std::vector<GLfloat> smooth_vertices;
 		std::vector<GLfloat> flat_vertices;
 		std::vector<GLfloat> flat_normals;
@@ -151,10 +151,10 @@ namespace geolib {
 	Therefore, we retrieve the data in terms of GL so it can be seamlessly read by glBufferData, etc. 
 	That way, we can keep the geometry class specific to 3D geometry data and disregard anything to do with a GL context. 
 	Therefore, loading of geometric information could be ran on a different thread without a GL context, but this is probably not necessary. */
-	class geometry_adapter {
+	class GLDataAdapter {
 	public:
-		geometry_adapter(Geometry3D* adaptee);
-		adapter_GLdata request_data();
-		Geometry3D* _geo_data;
+		GLDataAdapter(const Geometry3D& adaptee);
+		GLData requestData();
+		const Geometry3D& mGeoData;
 	};
 }

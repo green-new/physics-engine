@@ -53,5 +53,3 @@ private:
 	std::unique_ptr<EntityManager> mEntityManager;
 	std::unique_ptr<SystemManager> mSystemManager;
 };
-
-extern Coordinator gCoordinator;
