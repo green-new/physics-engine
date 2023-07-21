@@ -1,6 +1,6 @@
 #include "geometry.hpp"
 
-namespace geolib {
+namespace Geometry {
 
 	Geometry3D::Geometry3D() {
 		vertices = std::vector<dynamic_vertex>();
@@ -105,7 +105,7 @@ namespace geolib {
 	local vertex coordinates and normals. This would be done in the shader program. 
 	*/
 	void Geometry3D::calc_textures() {
-		for (auto& f : faces) {
+		/*for (auto& f : faces) {
 			const face& fcpy = *f.get();
 			vertex& A = get_vertex(fcpy.indices[0]);
 			vertex& B = get_vertex(fcpy.indices[1]);
@@ -113,7 +113,7 @@ namespace geolib {
 			glm::vec2 F;
 
 
-		}
+		}*/
 
 	}
 	void Geometry3D::clear() {
@@ -200,8 +200,11 @@ namespace geolib {
 				switch (map.at(element)) {
 				case VERTEX: {
 					glm::vec3 position = vec3f_strategy.execute(stream);
-					vertex v;
-					v.position = position;
+					vertex v = {
+						.position = position,
+						.normal = glm::vec3(0.0f, 0.0f, 0.0f),
+						.texture = glm::vec3(0.0f, 0.0f, 0.0f)
+					};
 					_g.add_vertex(v);
 					vIndex++;
 					continue;
@@ -270,8 +273,7 @@ namespace geolib {
 	}
 	unsigned int geometry_procedural::add_vertex(float v0, float v1, float v2) {
 		glm::vec3 position = glm::vec3(v0, v1, v2);
-		vertex v;
-		v.position = position;
+		vertex v = {.position = position, .normal = glm::vec3(0.0), .texture = glm::vec3(0.0) };
 		_g.add_vertex(v);
 
 		return _g.get_vertex_count() - 1;
@@ -295,8 +297,7 @@ namespace geolib {
 	*/
 	void geometry_procedural::add_triangle(unsigned int i0, unsigned int i1, unsigned int i2) {
 		glm::ivec3 indices = glm::ivec3(i0, i1, i2);
-		face f;
-		f.indices = indices;
+		face f = {.indices = indices, .flatNormal=glm::vec3(0.0f)};
 		_g.add_face(f);
 	}
 	/*

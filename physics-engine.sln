@@ -5,6 +5,11 @@ VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "physics-engine", "physics-engine\physics-engine.vcxproj", "{ECD70A2D-AE4E-4BEA-AE2E-FC40828308E2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CF71EDBB-9082-425C-9F32-5EBFC9958641}"
+	ProjectSection(SolutionItems) = preProject
+		physics-engine\shaders\VS_transform.glsl = physics-engine\shaders\VS_transform.glsl
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

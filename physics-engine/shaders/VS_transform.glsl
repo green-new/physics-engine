@@ -14,7 +14,7 @@ out vec2 Texture;
 
 void main()
 {
-	Texture = vec2(aPos.x, aPos.z);
+	Texture = vec2(aPos.x, aPos.y);
 	FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal;  
 	gl_Position = projection * view * vec4(FragPos, 1.0);

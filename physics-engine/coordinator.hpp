@@ -1,24 +1,14 @@
 #pragma once
-#include "signatures.hpp"
-#include "system.hpp"
-#include "components.hpp"
+#include "component_manager.hpp"
+#include "system_manager.hpp"
+#include "entity_manager.hpp"
 
 class Coordinator {
 public:
-	void init() {
-		mComponentManager = std::make_unique<ComponentManager>();
-		mEntityManager = std::make_unique<EntityManager>();
-		mSystemManager = std::make_unique<SystemManager>();
-	}
-	Entity createEntity() {
-		return mEntityManager->createEntity();
-	}
-	void destroyEntity(Entity entity) {
-		mEntityManager->deleteEntity(entity);
+	void init();
+	Entity createEntity();
+	void destroyEntity(Entity entity);
 
-		mSystemManager->onEntityDestroyed(entity);
-		mComponentManager->onEntityDestroyed(entity);
-	}
 	template<class T>
 	void registerComponent() {
 		mComponentManager->registerComponent<T>();
@@ -29,6 +19,7 @@ public:
 
 		auto signature = mEntityManager->getSignature(entity);
 		signature.set(mComponentManager->getComponentType<T>(), true);
+
 		mEntityManager->setSignature(entity, signature);
 		mSystemManager->onEntitySignatureChange(entity, signature);
 	}

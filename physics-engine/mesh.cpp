@@ -1,49 +1,65 @@
 #include "mesh.hpp"
-// Best practices for VAOs: https://stackoverflow.com/questions/8923174/opengl-vao-best-practices
-// Best practives for vbos, vaos https://www.khronos.org/opengl/wiki/Vertex_Specification_Best_Practices
-// Inspiration: https://learnopengl.com/Model-Loading/Mesh
+Mesh3D::Mesh3D(GLData glData) {
+	mGLData = glData;
+	mCurrentRenderMethod = FLAT_SHADING;
+	glGenVertexArrays(2, mVertexArray);
+	glGenBuffers(2, mVertexData);
+	glGenBuffers(2, mNormalData);
+	glGenBuffers(1, &mTextureData);
 
-Mesh3D::Mesh3D(geolib::Geometry3D* g) {
-	geolib::geometry_adapter adapter = geolib::geometry_adapter(g);
-	m_data = adapter.request_data();
-	m_vertexArray = new vao();
-	m_normalBuffer = new vbo();
-	m_positionBuffer = new vbo(); 
-
-	/* We could either create 2 VBOs and dynamically update them in the same VAO, or use 1 VBO with all vertex information.
-	For now, we will create two VAOs and bind whichever one we need when drawing. 
-	Because of this method, we must bind a new buffer everytime we call glVertexAttribPointer. 
-	This is why the vao.config_attributes() method is uninvoked in this program.
-	That method would work if we only had 1 VBO to bind. */
-	m_vertexArray->bind();
+	glBindVertexArray(mVertexArray[FLAT_SHADING]);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexData[FLAT_SHADING]);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.flat_vertices.size() * sizeof(mGLData.flat_vertices.at(0)), mGLData.flat_vertices.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mNormalData[FLAT_SHADING]);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.flat_normals.size() * sizeof(mGLData.flat_normals.at(0)), mGLData.flat_normals.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
-	m_positionBuffer->bind_data(m_data.flat_vertices.size(), m_data.smooth_vertices.data());
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	m_normalBuffer->bind_data(m_data.flat_normals.size(), m_data.smooth_normals.data());
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	m_vertexArray->unbind();
-}
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+/*	glBindBuffer(GL_ARRAY_BUFFER, mTextureData);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.textureData.size() * sizeof(mGLData.textureData.at(0)), mGLData.textureData.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, (GLint)mGLData.textureData.size(), GL_FLOAT, GL_FALSE, 0, 0)*/;
+
+	glBindVertexArray(mVertexArray[SMOOTH_SHADING]);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexData[SMOOTH_SHADING]);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.smooth_vertices.size() * sizeof(mGLData.smooth_vertices.at(0)), mGLData.smooth_vertices.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mNormalData[SMOOTH_SHADING]);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.smooth_normals.size() * sizeof(mGLData.smooth_normals.at(0)), mGLData.smooth_normals.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	//glBindBuffer(GL_ARRAY_BUFFER, mTextureData);
+	//glBufferData(GL_ARRAY_BUFFER, mGLData.textureData.size() * sizeof(mGLData.textureData.at(0)), mGLData.textureData.data(), GL_STATIC_DRAW);
+	//glEnableVertexAttribArray(3);
+	//glVertexAttribPointer(3, (GLint)mGLData.textureData.size(), GL_FLOAT, GL_FALSE, 0, 0);
+}
 Mesh3D::~Mesh3D() {
-	m_data.flat_vertices.clear();
-	m_data.flat_normals.clear();
-	m_data.smooth_vertices.clear();
-	m_data.smooth_normals.clear();
-
-	delete m_positionBuffer;
-	delete m_normalBuffer;
-	delete m_vertexArray;
+	glDeleteBuffers(2, mVertexData); 
+	glDeleteBuffers(2, mNormalData);
+	glDeleteBuffers(1, &mTextureData);
+	glDeleteVertexArrays(2, mVertexArray);
 }
-/* Determines the number of vertices active right now. */
-GLsizei Mesh3D::vertex_count() {
-	return m_data.smooth_vertices.size();
+void Mesh3D::swapVaos() {
+	(mCurrentRenderMethod == FLAT_SHADING ? mCurrentRenderMethod = SMOOTH_SHADING : mCurrentRenderMethod = FLAT_SHADING);
 }
-/* 
-* Draws the mesh.
-* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDrawArrays.xhtml
-*/
-void Mesh3D::draw(Shader& prog) {
-	m_vertexArray->bind();
-	glDrawArrays(GL_TRIANGLES, 0, vertex_count());
+GLsizei Mesh3D::vertexCount() const {
+	if (mCurrentRenderMethod == SMOOTH_SHADING) {
+		return (GLsizei)mGLData.smooth_vertices.size();
+	}
+	else if (mCurrentRenderMethod == FLAT_SHADING) {
+		return (GLsizei)mGLData.flat_vertices.size();
+	}
+	else {
+		return (GLsizei)mGLData.smooth_vertices.size();
+	}
+}
+void Mesh3D::draw() const {
+	glBindVertexArray(mVertexArray[mCurrentRenderMethod]);
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount());
 }

@@ -59,7 +59,7 @@ texture_t noise_texture(color_t primary, color_t secondary, uint16_t width, uint
 			/* Octave implementation is inherently O(n) */
 			double d = perlin.octave2D_01(j * fx, i * fx, octave);
 			/* We use smoothstep instead of linear interpolation for more realistic color blending. */
-			float sx = smoothstep(0.0f, 1.0f, d);
+			float sx = smoothstep(0.0f, 1.0f, (float)d);
 			float r = std::lerp(primary.rgba.red / 255.0f, secondary.rgba.red / 255.0f, sx);
 			float g = std::lerp(primary.rgba.green / 255.0f, secondary.rgba.green / 255.0f, sx);
 			float b = std::lerp(primary.rgba.blue / 255.0f, secondary.rgba.blue / 255.0f, sx);

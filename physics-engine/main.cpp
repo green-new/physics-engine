@@ -11,12 +11,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "window.hpp"
-#include "mesh.hpp"
-#include "resource.hpp"
-#include "camera.hpp"
-#include "skybox.hpp"
-#include "system.hpp"
+#include "types.hpp"
+#include "systems.hpp"
+#include "components.hpp"
 #include "coordinator.hpp"
+#include "resource.hpp"
+#include "input_manager.hpp"
 
 const uint16_t width = 1920;
 const uint16_t height = 1080;
@@ -26,13 +26,14 @@ bool updatePolygonMode = false;
 GLenum polygonMode = GL_FILL;
 
 std::unique_ptr<Window> gameWindow;
-std::unique_ptr<registry::ResourceManager> resourceManager;
-
+std::unique_ptr<Resources::ResourceManager> resourceManager;
 Coordinator gCoordinator;
 
-void handle_input(GLFWwindow* window, float deltaTime) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+void main_input(Input::GLFWKey key, bool state) {
+    using namespace Input;
+    if (key == GLFWKey::Escape && state == GLFW_PRESS) {
+        glfwSetWindowShouldClose(gameWindow->getHandle(), true);
+    }
 }
 
 void start() {
@@ -41,24 +42,29 @@ void start() {
     std::cout << "[W, A, S, D] \t\t\t--- Move the camera\n";
     std::cout << "[F] \t\t\t\t--- Toggle flat vs smooth shading lighting\n";
     std::cout << "[Q] \t\t\t\t--- Toggle between GL_FILL, GL_POINT, and GL_LINE\n";
-
-    if (gladLoadGLLoader((GLADloadproc)glfwGetProcAddress) != 0) {
+    
+    gameWindow = std::make_unique<Window>(width, height, BASIC_TITLE);
+        
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "[glad] Error loading OpenGL\n";
     }
 
-    gameWindow = std::make_unique<Window>(width, height, BASIC_TITLE);
-    resourceManager = std::make_unique<registry::ResourceManager>();
-    gCoordinator.init();
+    resourceManager = std::make_unique<Resources::ResourceManager>();
+    gameWindow->getKeyboardManager().subscribe(&main_input, {Input::GLFWKey::Escape}, 1);
+    resourceManager->init();
 
+    // Register the components
+    gCoordinator.init();
     gCoordinator.registerComponent<Components::Appearence>();
     gCoordinator.registerComponent<Components::Camera>();
     gCoordinator.registerComponent<Components::Orientation>();
-    gCoordinator.registerComponent<Components::Physics>();
+    gCoordinator.registerComponent<Components::RigidBody>();
     gCoordinator.registerComponent<Components::RenderShape>();
     gCoordinator.registerComponent<Components::Transform>();
 
     // Depth buffering (3D)
     glEnable(GL_DEPTH_TEST);
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 }
 
 void destroy() {
@@ -69,88 +75,73 @@ void destroy() {
 
 void run() {
     const float PHYS_FREQ = 500.0f; // 500 Hz
-    const float RENDER_FREQ = 2000.0f;  // 1000 Hz
+    const float RENDER_FREQ = 500.0f;  // 500 Hz
+
     double      deltaTime = 0.0f,
-        prevTime = glfwGetTime(),
-        currTime = 0.0f,
-        physTime = 0.0f,
-        renderTime = 0.0f,
-        fpsTime = 0.0f;
+                prevTime = glfwGetTime(),
+                currTime = 0.0f,
+                physTime = 0.0f,
+                renderTime = 0.0f,
+                fpsTime = 0.0f;
+
     bool        renderTick = false, 
                 physTick = false;
     unsigned int frames = 0;
 
-    glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 model = glm::mat4(1.0f);
-
-    const Shader& prog = resourceManager->getShader("VS_transform");
-    const Shader& skyboxShader = resourceManager->getShader("skybox");
-    prog.use();
-    prog.set_int("texture1", 0);
-    
-    Entity player = gCoordinator.createEntity();
-    gCoordinator.addComponent(player, Components::Camera {
-        .FOV = 90,
-        .ProjectionMatrix = projection,
-        .ViewMatrix = view,
-        .WorldUp = glm::vec3(0.0f, 1.0f, 0.0f)
-    });
-    gCoordinator.addComponent(player, Components::Transform {
-        .Position = glm::vec3(0.0f),
-        .Rotation = glm::vec3(0.0f),
-        .Scale = glm::vec3(0.0f),
-        .Angle = 0.0f
-    });
-    gCoordinator.addComponent(player, Components::Orientation {
-        .Front = glm::vec3(0.0f),
-        .Up = glm::vec3(0.0f),
-        .Right = glm::vec3(0.0f)
-    });
-
-    std::vector<Entity> entities;
-    const int n = 100;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> x(-50.0f, 50.0f);
-    std::uniform_real_distribution<> y(-50.0f, 50.0f);
-    std::uniform_real_distribution<> z(-50.0f, 50.0f);
-
-    Mesh3D sphere = Mesh3D(&resourceManager->getGeometry("uvsphere"));
-    for (unsigned int i = 0; n < 100; i++) {
-        Entity entity = gCoordinator.createEntity();
-        glm::vec3 position = glm::vec3(x(gen), y(gen), z(gen));
-
-        gCoordinator.addComponent(entity, Components::RenderShape
-            {
-                .Shape = sphere
-            });
-        gCoordinator.addComponent(entity, Components::Transform
-            {
-                .Position = position,
-                .Rotation = glm::vec3(0.0f),
-                .Scale = glm::vec3(0.0f),
-                .Angle = 0.0f
-            });
-
-        entities.push_back(entity);
-    }
-
     auto physicsSystem = gCoordinator.registerSystem<Systems::PhysicsSystem>();
     {
         Signature signature;
-        signature.set(gCoordinator.getComponentType<Components::Physics>(), true);
-        signature.set(gCoordinator.getComponentType<Components::Transform>(), true);
+        signature.set(gCoordinator.getComponentType<Components::RigidBody>());
+        signature.set(gCoordinator.getComponentType<Components::Transform>());
         gCoordinator.setSystemSignature<Systems::PhysicsSystem>(signature);
     }
 
     auto renderSystem = gCoordinator.registerSystem<Systems::RenderSystem>();
     {
         Signature signature;
-        signature.set(gCoordinator.getComponentType<Components::Appearence>(), true);
-        signature.set(gCoordinator.getComponentType<Components::Transform>(), true);
-        signature.set(gCoordinator.getComponentType<Components::RenderShape>(), true);
+        signature.set(gCoordinator.getComponentType<Components::Appearence>());
+        signature.set(gCoordinator.getComponentType<Components::Transform>());
+        signature.set(gCoordinator.getComponentType<Components::RenderShape>());
         gCoordinator.setSystemSignature<Systems::RenderSystem>(signature);
+    }
+
+    renderSystem->init();
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> x_dist(-20.0f, 20.0f);
+    std::uniform_real_distribution<> y_dist(-20.0f, 20.0f);
+    std::uniform_real_distribution<> z_dist(-20.0f, 20.0f);
+    std::uniform_real_distribution<float> zero_to_one(0.0f, 1.0f);
+    std::uniform_int_distribution<> shape_dist(0, 3);
+
+    //std::array<std::shared_ptr<Components::RenderShape>, 4> shape_set = {
+    //    std::shared_ptr<Components::RenderShape> {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("tetrahedron")).requestData()) },
+    //    Components::RenderShape {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("octahedron")).requestData()) },
+    //    Components::RenderShape {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("cube")).requestData()) },
+    //    Components::RenderShape {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("uvsphere")).requestData()) }
+    //};
+    std::shared_ptr<Components::RenderShape> shape = std::make_shared<Components::RenderShape>(Components::RenderShape{
+        .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("icosahedron")).requestData())
+        });
+    for (uint32_t i = 0; i < 100; i++) {
+        Entity entity = gCoordinator.createEntity();
+        gCoordinator.addComponent(entity, Components::Transform{
+            .Position = glm::vec3(x_dist(gen), y_dist(gen), z_dist(gen)),
+            .Rotation = glm::vec3(0.0f),
+            .Scale = glm::vec3(1.0f),
+            .RotationAngle = 0.0f
+            });
+        unsigned int index = shape_dist(gen);
+        gCoordinator.addComponent(entity, Components::RenderShape{
+            .Shape = shape.get()->Shape
+            });
+        gCoordinator.addComponent(entity, Components::Appearence{
+            .Texture = resourceManager->getTexture("cloud"),
+            .Opacity = zero_to_one(gen),
+            .Reflectance = 0.0f,
+            .BaseColor = glm::vec3(zero_to_one(gen), zero_to_one(gen), zero_to_one(gen))
+            });
     }
 
     /* Loop until the user closes the window */
@@ -165,16 +156,15 @@ void run() {
         if (physTick) {
             physTime = currTime;
 
-            physicsSystem->update(deltaTime);
+            physicsSystem->update((float)deltaTime);
         }
         /* Render update */
         renderTick = (currTime - renderTime > 1.0f / (RENDER_FREQ));
         if (renderTick) {
             renderTime = currTime;
-            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
-            renderSystem->update(deltaTime);
+            renderSystem->update((float)deltaTime);
 
             glfwSwapBuffers(gameWindow->getHandle());
         }
@@ -212,8 +202,7 @@ void run() {
             glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
         }
 
-        /* Handle input */
-        handle_input(gameWindow->getHandle(), deltaTime);
+        gameWindow->updateKeyboard();
 
         /* Poll for and process events */
         glfwPollEvents();

@@ -19,7 +19,7 @@
 For procedurally generated geometry, a face can only have 12 sides. */
 #define GEOLIB_MAX_POLYGON_SIDES	12
 
-namespace geolib {
+namespace Geometry {
 	struct vertex {
 		glm::vec3 position;
 		glm::vec3 normal;
@@ -29,6 +29,14 @@ namespace geolib {
 	struct face {
 		glm::ivec3 indices;
 		glm::vec3 flatNormal;
+	};
+	class Simplex3D {
+		bool contains_origin();
+	private:
+		struct simple_vertex {
+			float x, y, z;
+		};
+		std::array<simple_vertex, 4> vertices;
 	};
 	typedef std::shared_ptr<face> dynamic_face;
 	/* The geometry class is responsible for loading 3D data and representing them as triangle meshes,
@@ -75,8 +83,8 @@ namespace geolib {
 		_g is not allocated dynamically. */
 		Geometry3D build();
 	protected:
-		bool normalsWerePredefined;
-		bool texturesWerePredefined;
+		bool normalsWerePredefined = false;
+		bool texturesWerePredefined = false;
 		/* Not allocated dynamically. 
 		Will be deleted in destructor automatically. */
 		Geometry3D _g;
@@ -102,13 +110,12 @@ namespace geolib {
 		virtual glm::vec<L, S> execute(std::stringstream& stream);
 	};
 
-	/* Responsible for reading simple geometric information from a .obj file. */
 	class geometry_obj : public GeometryBuilder {
 	private:
 		std::string filename;
 		std::fstream file;
 		std::stringstream stream;
-		enum entry {VERTEX, VERTEX_TEXTURES, VERTEX_NORMALS, FACE };
+		enum entry { VERTEX, VERTEX_TEXTURES, VERTEX_NORMALS, FACE };
 		inline static const std::unordered_map<std::string, entry> map = {
 			{"v", VERTEX},
 			{"vt", VERTEX_TEXTURES},
@@ -127,7 +134,7 @@ namespace geolib {
 
 	/* Generate geometry procedurally.
 	This is currently used to create the plane, cube, and sphere meshes. */
-	class geometry_procedural : public GeometryBuilder {
+	class geometry_procedural : public GeometryBuilder{
 	public:
 		geometry_procedural();
 		void set_smooth_normal(unsigned int idx, float v0, float v1, float v2);
@@ -145,6 +152,7 @@ namespace geolib {
 		std::vector<GLfloat> flat_vertices;
 		std::vector<GLfloat> flat_normals;
 		std::vector<GLfloat> smooth_normals;
+		std::vector<GLfloat> textureData;
 	};
 	/* Adapter class for retrieving GL appropriate data. 
 	Adapter design pattern. Takes geometry data, which is difficult to read properly from a GL perspective.

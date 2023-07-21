@@ -3,13 +3,9 @@
 #include <GLFW/glfw3.h>
 #include <cstdint>
 #include <string>
+#include "input_manager.hpp"
 
 #define BASIC_TITLE "Physics and rendering demo {}"
-
-struct Mouse {
-	float lastMouseX, lastMouseY;
-	float deltaX, deltaY;
-};
 
 class Window {
 private:
@@ -18,17 +14,19 @@ private:
 	const uint16_t height;
 	std::string title;
 
-	Mouse mMouse;
-
-	//void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-	//void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	Input::KeyboardManager keyboardManager;
+	Input::MouseManager mouseManager;
 public:
 	Window(const uint16_t _width, const uint16_t _height, std::string _title);
 	~Window();
 
 	GLFWwindow* getHandle();
 	void updateTitle(std::string title);
+	uint16_t getWidth();
+	uint16_t getHeight();
 
-	int getInput(int key);
-	Mouse getMouse();
+	void updateKeyboard();
+
+	Input::KeyboardManager& getKeyboardManager();
+	Input::MouseManager& getMouseManager();
 };

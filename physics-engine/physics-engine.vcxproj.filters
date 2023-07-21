@@ -37,6 +37,24 @@
     <Filter Include="Header Files\ecs">
       <UniqueIdentifier>{306650ff-e8e0-4772-b474-e28ba2bc514a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ecs">
+      <UniqueIdentifier>{cb0d47ad-4137-4f54-bdcd-dd47b78627cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ecs\systems">
+      <UniqueIdentifier>{13a94379-a588-4dbf-b194-15213ce88e02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ecs\components">
+      <UniqueIdentifier>{2b345c7b-93fb-4728-9477-ec8189f06a79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ecs\systems">
+      <UniqueIdentifier>{368e20ab-3b61-4271-ad24-31fcb5c31db3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\physics">
+      <UniqueIdentifier>{63661109-b8b7-4f1a-a9a0-48f8e1fdd38c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\physics">
+      <UniqueIdentifier>{7bcdbde0-8f94-4c2a-a842-8aa12cff6e91}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -60,11 +78,47 @@
     <ClCompile Include="geometry.cpp">
       <Filter>Source Files\math</Filter>
     </ClCompile>
+    <ClCompile Include="coordinator.cpp">
+      <Filter>Source Files\ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="resource.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="entity_manager.cpp">
+      <Filter>Source Files\ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="skybox.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="camera_system.cpp">
+      <Filter>Source Files\ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="physics_system.cpp">
+      <Filter>Source Files\ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="render_system.cpp">
+      <Filter>Source Files\ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="system_manager.cpp">
+      <Filter>Source Files\ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="input_manager.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="mouse_manager.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="key_subscription.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard_manager.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="gjk.cpp">
+      <Filter>Source Files\physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="window.hpp">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="mesh.hpp">
       <Filter>Header Files\render</Filter>
     </ClInclude>
@@ -77,22 +131,16 @@
     <ClInclude Include="geometry.hpp">
       <Filter>Header Files\math</Filter>
     </ClInclude>
-    <ClInclude Include="camera.hpp">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="resource.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="components.hpp">
       <Filter>Header Files\ecs</Filter>
     </ClInclude>
-    <ClInclude Include="entity.hpp">
+    <ClInclude Include="entity_manager.hpp">
       <Filter>Header Files\ecs</Filter>
     </ClInclude>
-    <ClInclude Include="system.hpp">
-      <Filter>Header Files\ecs</Filter>
-    </ClInclude>
-    <ClInclude Include="signatures.hpp">
+    <ClInclude Include="systems.hpp">
       <Filter>Header Files\ecs</Filter>
     </ClInclude>
     <ClInclude Include="coordinator.hpp">
@@ -100,6 +148,66 @@
     </ClInclude>
     <ClInclude Include="skybox.hpp">
       <Filter>Header Files\render</Filter>
+    </ClInclude>
+    <ClInclude Include="window.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="transform.hpp">
+      <Filter>Header Files\ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.hpp">
+      <Filter>Header Files\ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="orientation.hpp">
+      <Filter>Header Files\ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="appearence.hpp">
+      <Filter>Header Files\ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="rigid_body.hpp">
+      <Filter>Header Files\ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="shape.hpp">
+      <Filter>Header Files\ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="component_array.hpp">
+      <Filter>Header Files\ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="component_manager.hpp">
+      <Filter>Header Files\ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="render_system.hpp">
+      <Filter>Header Files\ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="camera_system.hpp">
+      <Filter>Header Files\ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="physics_system.hpp">
+      <Filter>Header Files\ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="system_manager.hpp">
+      <Filter>Header Files\ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="input_manager.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="types.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="mouse_manager.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="keyboard_manager.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="key_subscription.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="gjk.hpp">
+      <Filter>Header Files\physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -115,5 +223,11 @@
     <None Include="skybox.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="shaders\FS_transform.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="physics-engine.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
