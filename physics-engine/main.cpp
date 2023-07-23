@@ -115,14 +115,8 @@ void run() {
     std::uniform_real_distribution<float> zero_to_one(0.0f, 1.0f);
     std::uniform_int_distribution<> shape_dist(0, 3);
 
-    //std::array<std::shared_ptr<Components::RenderShape>, 4> shape_set = {
-    //    std::shared_ptr<Components::RenderShape> {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("tetrahedron")).requestData()) },
-    //    Components::RenderShape {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("octahedron")).requestData()) },
-    //    Components::RenderShape {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("cube")).requestData()) },
-    //    Components::RenderShape {.Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("uvsphere")).requestData()) }
-    //};
     std::shared_ptr<Components::RenderShape> shape = std::make_shared<Components::RenderShape>(Components::RenderShape{
-        .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("icosahedron")).requestData())
+        .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("sphere")).requestData())
         });
     for (uint32_t i = 0; i < 100; i++) {
         Entity entity = gCoordinator.createEntity();
@@ -143,6 +137,23 @@ void run() {
             .BaseColor = glm::vec3(zero_to_one(gen), zero_to_one(gen), zero_to_one(gen))
             });
     }
+
+    Entity terrain = gCoordinator.createEntity();
+    gCoordinator.addComponent(terrain, Components::RenderShape{
+        .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("terrain")).requestData())
+        });
+    gCoordinator.addComponent(terrain, Components::Transform{
+        .Position = glm::vec3(0.0f, 0.0f, 0.0f),
+        .Rotation = glm::vec3(0.0f),
+        .Scale = glm::vec3(1.0f),
+        .RotationAngle = 0.0f
+        });
+    gCoordinator.addComponent(terrain, Components::Appearence{
+        .Texture = resourceManager->getTexture("grass"),
+        .Opacity = 0.0f,
+        .Reflectance = 0.0f,
+        .BaseColor = glm::vec3(0.6f, 0.3f, 0.2f)
+        });
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(gameWindow->getHandle())) {

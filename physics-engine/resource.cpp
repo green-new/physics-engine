@@ -7,89 +7,101 @@ using namespace Resources;
 GeometryResources::GeometryResources() {
 	// OBJ file loads.
 	std::cout << "[Registry] Generating geometries..." << std::endl;
-	add("tetrahedron", Geometry::geometry_obj("models/tetrahedron.obj").build());
-	add("octahedron", Geometry::geometry_obj("models/octahedron.obj").build());
-	add("dodecahedron", Geometry::geometry_obj("models/dodecahedron.obj").build());
-	add("icosahedron", Geometry::geometry_obj("models/icosahedron.obj").build());
-	add("gourd", Geometry::geometry_obj("models/gourd.obj").build());
-	add("teapot", Geometry::geometry_obj("models/teapot.obj").build());
+	//add("tetrahedron", Geometry::AssetGeometryBuilder()
+	//	.load("models/tetrahedron.obj")
+	//	.build());
+	//add("octahedron", Geometry::AssetGeometryBuilder()
+	//	.load("models/octahedron.obj")
+	//	.build());
+	//add("dodecahedron", Geometry::AssetGeometryBuilder()
+	//	.load("models/dodecahedron.obj")
+	//	.build());
+	//add("icosahedron", Geometry::AssetGeometryBuilder()
+	//	.load("models/icosahedron.obj")
+	//	.build());
+	//add("gourd", Geometry::AssetGeometryBuilder()
+	//	.load("models/gourd.obj")
+	//	.build());
+	//add("teapot", Geometry::AssetGeometryBuilder()
+	//	.load("models/teapot.obj")
+	//	.build());
 
 	// Procedural generation.
-	Geometry::geometry_procedural cubeGen;
-	unsigned int c0 = cubeGen.add_vertex(-0.5f, -0.5f, -0.5f);
-	unsigned int c1 = cubeGen.add_vertex(0.5f, -0.5f, -0.5f);
-	unsigned int c2 = cubeGen.add_vertex(-0.5f, 0.5f, -0.5f);
-	unsigned int c3 = cubeGen.add_vertex(0.5f, 0.5f, -0.5f);
-	unsigned int c4 = cubeGen.add_vertex(-0.5f, -0.5f, 0.5f);
-	unsigned int c5 = cubeGen.add_vertex(-0.5f, 0.5f, 0.5f);
-	unsigned int c6 = cubeGen.add_vertex(0.5f, 0.5f, 0.5f);
-	unsigned int c7 = cubeGen.add_vertex(0.5f, -0.5f, 0.5f);
-	cubeGen.add_quad(c0, c2, c3, c1);
-	cubeGen.add_quad(c1, c0, c4, c7);
-	cubeGen.add_quad(c7, c1, c3, c6);
-	cubeGen.add_quad(c6, c7, c4, c5);
-	cubeGen.add_quad(c5, c6, c3, c2);
-	cubeGen.add_quad(c2, c5, c4, c0);
+	Geometry::vertex v0 = { .position = glm::vec3(-0.5f, -0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f)};
+	Geometry::vertex v1 = { .position = glm::vec3(0.5f, -0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v2 = { .position = glm::vec3(0.5f, 0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v3 = { .position = glm::vec3(-0.5f, -0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v4 = { .position = glm::vec3(-0.5f, 0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v5 = { .position = glm::vec3(-0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v6 = { .position = glm::vec3(0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v7 = { .position = glm::vec3(0.5f, -0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	auto cube = Geometry::ProceduralBuilder().addQuad({v0, v2, v3, v1})
+		.addQuad({ v1, v0, v4, v7 })
+		.addQuad({ v7, v1, v3, v6 })
+		.addQuad({ v6, v7, v4, v5 })
+		.addQuad({ v5, v6, v3, v2 })
+		.addQuad({ v2, v5, v4, v0 })
+		.build();
 
-	add("cube", cubeGen.build());
+	add("cube", *cube.get());
 
 	// UV sphere algorithm
 	// x = x0 + r * sin(A) * cos(P)
 	// y = y0 + r * sin(A) * sin(P)
 	// z = z0 + r * cos(A)
 	// where r > 0, A = theta[0, pi] and P = phi[0, 2pi]
-	Geometry::geometry_procedural sphereGen;
+	Geometry::ProceduralBuilder sphereGen;
 	unsigned int Us = 64;
 	unsigned int Vs = 64;
 	float pi = std::numbers::pi_v<float>;
-	float x0, y0, z0;
+	float x0, y0, z0,
+		x1, y1, z1,
+		x2, y2, z2,
+		x3, y3, z3;
 	for (unsigned int u = 0; u < Us; u++) {
 		float theta0 = pi * u / Us;
 		float theta1 = pi * (u + 1.0f) / Us;
 		for (unsigned int v = 0; v < Vs; v++) {
 			float phi0 = 2 * pi * v / Vs;
 			float phi1 = 2 * pi * (v + 1.0f) / Vs;
+			// Lower left
 			x0 = sinf(theta0) * cosf(phi0);
 			y0 = sinf(theta0) * sinf(phi0);
 			z0 = cosf(theta0);
-			unsigned int i0 = sphereGen.add_vertex(x0, y0, z0);
-			x0 = sinf(theta0) * cosf(phi1);
-			y0 = sinf(theta0) * sinf(phi1);
-			z0 = cosf(theta0);
-			unsigned int i1 = sphereGen.add_vertex(x0, y0, z0);
-			x0 = sinf(theta1) * cosf(phi0);
-			y0 = sinf(theta1) * sinf(phi0);
-			z0 = cosf(theta1);
-			unsigned int i2 = sphereGen.add_vertex(x0, y0, z0);
-			x0 = sinf(theta1) * cosf(phi1);
-			y0 = sinf(theta1) * sinf(phi1);
-			z0 = cosf(theta1);
-			unsigned int i3 = sphereGen.add_vertex(x0, y0, z0);
-			if (u > 0 && u < Us - 1)
-				// Add a normal quad.
-				sphereGen.add_quad(i0, i2, i3, i1);
-			else
-				// Add a triangle at the top and bottom ends.
-				if (u == 0)
-					sphereGen.add_triangle(i0, i2, i3);
-				else if (u == Us - 1)
-					sphereGen.add_triangle(i0, i2, i1);
+
+			// Lower right
+			x1 = sinf(theta0) * cosf(phi1);
+			y1 = sinf(theta0) * sinf(phi1);
+			z1 = cosf(theta0);
+
+			// Top left
+			x2 = sinf(theta1) * cosf(phi0);
+			y2 = sinf(theta1) * sinf(phi0);
+			z2 = cosf(theta1);
+
+			// Top right
+			x3 = sinf(theta1) * cosf(phi1);
+			y3 = sinf(theta1) * sinf(phi1);
+			z3 = cosf(theta1);
+			Geometry::vertex v0 = Geometry::vertex{ .position = glm::vec3(x0, y0, z0), .normal = glm::vec3(x0, y0, z0), .texture = glm::vec2(theta0, phi0) };
+			Geometry::vertex v1 = Geometry::vertex{ .position = glm::vec3(x1, y1, z1), .normal = glm::vec3(x1, y1, z1), .texture = glm::vec2(theta0, phi1) };
+			Geometry::vertex v2 = Geometry::vertex{ .position = glm::vec3(x2, y2, z2), .normal = glm::vec3(x2, y2, z2), .texture = glm::vec2(theta1, phi0) };
+			Geometry::vertex v3 = Geometry::vertex{ .position = glm::vec3(x3, y3, z3), .normal = glm::vec3(x3, y3, z3), .texture = glm::vec2(theta1, phi1) };
+
+			if (u > 0 && u < Us - 1) {
+				sphereGen.addQuad({ v0, v2, v3, v1});
+			} else {
+				if (u == 0) {
+					sphereGen.addTriangle({ v0, v2, v3 });
+				} else if (u == Us - 1) {
+					sphereGen.addTriangle({ v1, v0, v2 });
+				}
+			}
 		}
 	}
-	add("uvsphere", sphereGen.build());
+	add("sphere", *sphereGen.build().get());
 
-	Geometry::geometry_procedural plane;
-
-	unsigned int i0 = plane.add_vertex(-1.0f, 0.0f, -1.0f);
-	unsigned int i1 = plane.add_vertex(1.0f, 0.0f, -1.0f);
-	unsigned int i2 = plane.add_vertex(1.0f, 0.0f, 1.0f);
-	unsigned int i3 = plane.add_vertex(-1.0f, 0.0f, 1.0f);
-	unsigned int faces[4] = { i0, i1, i2, i3 };
-	plane.add_polygon(faces, 4);
-
-	add("plane", plane.build());
-
-	Geometry::geometry_procedural terrain;
+	Geometry::ProceduralBuilder terrain;
 	uint32_t seed = (uint32_t)time(NULL);
 	const siv::PerlinNoise perlin{ seed };
 	int width = 256, height = 256;
@@ -103,16 +115,18 @@ GeometryResources::GeometryResources() {
 			double d1 = perlin.octave2D_01(fx * x, fy * (y + 1), oct0);
 			double d2 = perlin.octave2D_01(fx * (x + 1), fy * y, oct0);
 			double d3 = perlin.octave2D_01(fx * (x + 1), fy * (y + 1), oct0);
-			unsigned int i0 = terrain.add_vertex((float)x, (float)d0 * (float)depth, (float)y);
-			unsigned int i1 = terrain.add_vertex((float)x, (float)d1 * (float)depth, (float)y + 1.0f);
-			unsigned int i2 = terrain.add_vertex((float)x + 1.0f, (float)d2 * (float)depth, (float)y);
-			unsigned int i3 = terrain.add_vertex((float)x + 1.0f, (float)d3 * (float)depth, (float)y + 1.0f);
+			glm::vec2 texture = glm::vec2(x / width, y / height);
+			glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			Geometry::vertex v0 = { .position = glm::vec3((float)x, (float)d0 * (float)depth, (float)y), .normal = normal, .texture = texture};
+			Geometry::vertex v1 = { .position = glm::vec3((float)x, (float)d1 * (float)depth, (float)y + 1.0f), .normal = normal, .texture = texture };
+			Geometry::vertex v2 = { .position = glm::vec3((float)x + 1.0f, (float)d2 * (float)depth, (float)y), .normal = normal, .texture = texture };
+			Geometry::vertex v3 = { .position = glm::vec3((float)x + 1.0f, (float)d3 * (float)depth, (float)y + 1.0f), .normal = normal, .texture = texture };
 
-			terrain.add_quad(i0, i1, i3, i2);
+			terrain.addQuad({ v0, v2, v3, v1 });
 		}
 	}
 
-	add("terrain", terrain.build());
+	add("terrain", *terrain.build().get());
 }
 
 ShaderResources::ShaderResources() {

@@ -9,12 +9,12 @@ Mesh3D::Mesh3D(GLData glData) {
 
 	glBindVertexArray(mVertexArray[FLAT_SHADING]);
 	glBindBuffer(GL_ARRAY_BUFFER, mVertexData[FLAT_SHADING]);
-	glBufferData(GL_ARRAY_BUFFER, mGLData.flat_vertices.size() * sizeof(mGLData.flat_vertices.at(0)), mGLData.flat_vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.flatVertices.size() * sizeof(mGLData.flatVertices.at(0)), mGLData.flatVertices.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, mNormalData[FLAT_SHADING]);
-	glBufferData(GL_ARRAY_BUFFER, mGLData.flat_normals.size() * sizeof(mGLData.flat_normals.at(0)), mGLData.flat_normals.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.flatNormals.size() * sizeof(mGLData.flatNormals.at(0)), mGLData.flatNormals.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -25,12 +25,12 @@ Mesh3D::Mesh3D(GLData glData) {
 
 	glBindVertexArray(mVertexArray[SMOOTH_SHADING]);
 	glBindBuffer(GL_ARRAY_BUFFER, mVertexData[SMOOTH_SHADING]);
-	glBufferData(GL_ARRAY_BUFFER, mGLData.smooth_vertices.size() * sizeof(mGLData.smooth_vertices.at(0)), mGLData.smooth_vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.smoothVertices.size() * sizeof(mGLData.smoothVertices.at(0)), mGLData.smoothVertices.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, mNormalData[SMOOTH_SHADING]);
-	glBufferData(GL_ARRAY_BUFFER, mGLData.smooth_normals.size() * sizeof(mGLData.smooth_normals.at(0)), mGLData.smooth_normals.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mGLData.smoothNormals.size() * sizeof(mGLData.smoothNormals.at(0)), mGLData.smoothNormals.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -50,13 +50,13 @@ void Mesh3D::swapVaos() {
 }
 GLsizei Mesh3D::vertexCount() const {
 	if (mCurrentRenderMethod == SMOOTH_SHADING) {
-		return (GLsizei)mGLData.smooth_vertices.size();
+		return (GLsizei)mGLData.smoothVertices.size();
 	}
 	else if (mCurrentRenderMethod == FLAT_SHADING) {
-		return (GLsizei)mGLData.flat_vertices.size();
+		return (GLsizei)mGLData.flatVertices.size();
 	}
 	else {
-		return (GLsizei)mGLData.smooth_vertices.size();
+		return (GLsizei)mGLData.smoothVertices.size();
 	}
 }
 void Mesh3D::draw() const {
