@@ -31,12 +31,6 @@ namespace Geometry {
 		glm::vec3 flatNormal;
 	};
 
-	class Simplex3D {
-		bool containsOrigin();
-	private:
-		std::array<glm::vec3, 4> vertices;
-	};
-
 	class Geometry3D {
 	public:
 		Geometry3D();
