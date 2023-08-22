@@ -21,6 +21,7 @@ namespace Input {
         D = GLFW_KEY_D,
         F = GLFW_KEY_F,
         Q = GLFW_KEY_Q,
+        P = GLFW_KEY_P,
         S = GLFW_KEY_S,
         W = GLFW_KEY_W,
         Escape = GLFW_KEY_ESCAPE

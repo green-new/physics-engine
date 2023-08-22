@@ -3,6 +3,7 @@
 
 namespace Components {
 	struct RigidBody {
+		Geometry::Geometry3D Shape;
 		bool Anchored;
 		float Mass;
 		glm::vec3 Velocity;

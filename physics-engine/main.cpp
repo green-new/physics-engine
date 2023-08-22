@@ -21,6 +21,8 @@
 const uint16_t width = 1920;
 const uint16_t height = 1080;
 
+bool paused = false;
+bool updateGravity = false;
 bool updateNormals = false;
 bool updatePolygonMode = false;
 GLenum polygonMode = GL_FILL;
@@ -33,6 +35,9 @@ void main_input(Input::GLFWKey key, bool state) {
     using namespace Input;
     if (key == GLFWKey::Escape && state == GLFW_PRESS) {
         glfwSetWindowShouldClose(gameWindow->getHandle(), true);
+    }
+    if (key == GLFWKey::Q && state == GLFW_PRESS) {
+        updateGravity = true;
     }
 }
 
@@ -50,7 +55,7 @@ void start() {
     }
 
     resourceManager = std::make_unique<Resources::ResourceManager>();
-    gameWindow->getKeyboardManager().subscribe(&main_input, {Input::GLFWKey::Escape}, 1);
+    gameWindow->getKeyboardManager().subscribe(&main_input, {Input::GLFWKey::Escape, Input::GLFWKey::Q}, 2);
     resourceManager->init();
 
     // Register the components
@@ -74,7 +79,7 @@ void destroy() {
 }
 
 void run() {
-    const float PHYS_FREQ = 500.0f; // 500 Hz
+    const float PHYS_FREQ = 1000.0f; // 1000 Hz
     const float RENDER_FREQ = 500.0f;  // 500 Hz
 
     double      deltaTime = 0.0f,
@@ -105,6 +110,7 @@ void run() {
         gCoordinator.setSystemSignature<Systems::RenderSystem>(signature);
     }
 
+    physicsSystem->init();
     renderSystem->init();
 
     std::random_device rd;
@@ -113,6 +119,8 @@ void run() {
     std::uniform_real_distribution<> y_dist(-20.0f, 20.0f);
     std::uniform_real_distribution<> z_dist(-20.0f, 20.0f);
     std::uniform_real_distribution<float> zero_to_one(0.0f, 1.0f);
+    std::uniform_real_distribution<float> one_to_100(1.0f, 2.5f);
+    std::uniform_real_distribution<float> neg_to_pos(-100.0f, 100.0f);
     std::uniform_int_distribution<> shape_dist(0, 3);
 
     std::shared_ptr<Components::RenderShape> shape = std::make_shared<Components::RenderShape>(Components::RenderShape{
@@ -120,10 +128,11 @@ void run() {
         });
     for (uint32_t i = 0; i < 100; i++) {
         Entity entity = gCoordinator.createEntity();
+        const float mass = one_to_100(gen);
         gCoordinator.addComponent(entity, Components::Transform{
             .Position = glm::vec3(x_dist(gen), y_dist(gen), z_dist(gen)),
             .Rotation = glm::vec3(0.0f),
-            .Scale = glm::vec3(1.0f),
+            .Scale = glm::vec3(1.0f) * mass,
             .RotationAngle = 0.0f
             });
         unsigned int index = shape_dist(gen);
@@ -136,24 +145,15 @@ void run() {
             .Reflectance = 0.0f,
             .BaseColor = glm::vec3(zero_to_one(gen), zero_to_one(gen), zero_to_one(gen))
             });
+        gCoordinator.addComponent(entity, Components::RigidBody{
+            .Shape = resourceManager->getGeometry("sphere"),
+            .Anchored = false,
+            .Mass = mass,
+            .Velocity = glm::vec3(0.0f),
+            .Acceleration = glm::vec3(neg_to_pos(gen), neg_to_pos(gen), neg_to_pos(gen)), // Give us a random accel. you bum.
+            .NetForce = glm::vec3(0.0f), // Idk wth this does yet.
+            });
     }
-
-    Entity terrain = gCoordinator.createEntity();
-    gCoordinator.addComponent(terrain, Components::RenderShape{
-        .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("terrain")).requestData())
-        });
-    gCoordinator.addComponent(terrain, Components::Transform{
-        .Position = glm::vec3(0.0f, 0.0f, 0.0f),
-        .Rotation = glm::vec3(0.0f),
-        .Scale = glm::vec3(1.0f),
-        .RotationAngle = 0.0f
-        });
-    gCoordinator.addComponent(terrain, Components::Appearence{
-        .Texture = resourceManager->getTexture("grass"),
-        .Opacity = 0.0f,
-        .Reflectance = 0.0f,
-        .BaseColor = glm::vec3(0.6f, 0.3f, 0.2f)
-        });
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(gameWindow->getHandle())) {
@@ -192,6 +192,7 @@ void run() {
 
         prevTime = currTime;
 
+        /* Random update stuff */
         if (updatePolygonMode) {
             updatePolygonMode = false;
             polygonMode++;
@@ -211,6 +212,11 @@ void run() {
                 break;
             }
             glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
+        }
+
+        if (updateGravity) {
+            physicsSystem->switchGravity();
+            updateGravity = false;
         }
 
         gameWindow->updateKeyboard();

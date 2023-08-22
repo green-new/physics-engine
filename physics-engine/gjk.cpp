@@ -1,36 +1,7 @@
 #include "gjk.hpp"
 
-// Shape must be in world coordinates.
-const glm::vec3 Physics::support(std::vector<glm::vec3> shape, glm::vec3 d) {
-	float dot = -1.0f, temp;
-	glm::vec3 support;
-	for (const auto& vertex : shape) {
-		float temp = glm::dot(vertex, d);
-		if (temp > dot) {
-			support = vertex;
-			dot = temp;
-		}
-	}
-
-	return support;
-}
-
-bool Physics::gjk(Collider* p, Collider* q, glm::vec3 initial_axis) {
-	glm::vec3 A = p->support(initial_axis) - q->support(initial_axis);
-	Simplex simplex;
-	simplex.pushFront(A);
-	glm::vec3 newDir = -A;
-
-	while (true) {
-		A = p->support(newDir) - q->support(newDir);
-		if (glm::dot(A, newDir) < 0) {
-			return false;
-		}
-		simplex.pushFront(A);
-		if (nearestSimplex(simplex, newDir)) {
-			return true;
-		}
-	}
+bool Physics::sameDirection(const glm::vec3& direction, const glm::vec3& ao) {
+	return glm::dot(direction, ao) > 0;
 }
 
 bool Line(Physics::Simplex& simplex, glm::vec3& direction) {
@@ -122,12 +93,30 @@ bool Tetrahedron(Physics::Simplex& simplex, glm::vec3& direction) {
 }
 
 bool Physics::nearestSimplex(Simplex& simplex, glm::vec3& direction) {
-	switch (simplex.size()) {
+	switch (simplex.len()) {
 		case 2: return Line(simplex, direction);
 		case 3: return Triangle(simplex, direction);
 		case 4: return Tetrahedron(simplex, direction);
 	}
 
 	return false;
+}
+
+bool Physics::gjk(Collider* p, Collider* q, glm::vec3 initial_axis) {
+	glm::vec3 A = p->support(initial_axis) - q->support(initial_axis);
+	Simplex simplex;
+	simplex.pushFront(A);
+	glm::vec3 newDir = -A;
+
+	while (true) {
+		A = p->support(newDir) - q->support(newDir);
+		if (glm::dot(A, newDir) < 0) {
+			return false;
+		}
+		simplex.pushFront(A);
+		if (nearestSimplex(simplex, newDir)) {
+			return true;
+		}
+	}
 }
 

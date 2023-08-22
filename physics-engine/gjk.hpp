@@ -25,7 +25,7 @@ namespace Physics {
 		}
 
 		glm::vec3& operator[](unsigned int i) { return points[i]; }
-		unsigned int size() const { return size; }
+		unsigned int len() const { return size; }
 
 		auto begin() const { return points.begin(); }
 		auto end() const { return points.end() - (4 - size); }
@@ -41,8 +41,8 @@ namespace Physics {
 		std::vector<glm::vec3> vertices;
 	public:
 		glm::vec3 support(glm::vec3 direction) const override {
-			float dot = -FLT_MAX, temp;
-			glm::vec3 support;
+			float dot = -FLT_MAX, temp = 0.0f;
+			glm::vec3 support = glm::vec3(0.0f);
 			for (const auto& vertex : vertices) {
 				float temp = glm::dot(vertex, direction);
 				if (temp > dot) {
@@ -54,10 +54,7 @@ namespace Physics {
 			return support;
 		}
 	};
-
-	bool sameDirection(const glm::vec3& direction, const glm::vec3& ao) {
-		return glm::dot(direction, ao) > 0;
-	}
+	bool sameDirection(const glm::vec3& direction, const glm::vec3& ao);
 	bool gjk(Collider* p, Collider* q, glm::vec3 inital_axis = glm::vec3(0.0f));
 	bool nearestSimplex(Simplex& simplex, glm::vec3& direction);
 }
