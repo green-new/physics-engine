@@ -19,11 +19,8 @@ void PhysicsSystem::collision(Entity base, float deltaTime) {
 	/* Naiive implementation */
 	for (Entity entity : mEntities) {
 		if (entity != base) {
-			auto& colliderP = gCoordinator.getComponent<Components::RigidBody>(base);
-			auto& colliderQ = gCoordinator.getComponent<Components::RigidBody>(entity);
-			//if (Physics::gjk(base, entity)) {
-			//	/* Do collision response */
-			//}
+			auto& colliderP = gCoordinator.getComponent<Components::RigidBody>(base).Shape;
+			auto& colliderQ = gCoordinator.getComponent<Components::RigidBody>(entity).Shape;
 		}
 	}
 }
@@ -40,11 +37,11 @@ void PhysicsSystem::update(float deltaTime) {
 			// Gravity stuff
 			if (gravity) {
 				/* Move our objects downward */
-				rigidBody.Acceleration += glm::vec3(0.0f, -9.8f, 0.0f) * rigidBody.Mass * 1.0f;
+				rigidBody.Force += glm::vec3(0.0f, -9.8f, 0.0f) * rigidBody.Mass * 10.0f;
 			}
 
 			// Update accel.
-			rigidBody.Velocity += rigidBody.Acceleration * deltaTime;
+			rigidBody.Velocity += rigidBody.Force / rigidBody.Mass * deltaTime;
 
 			// Update pos./vel.
 			transform.Position += rigidBody.Velocity * deltaTime;
@@ -54,7 +51,8 @@ void PhysicsSystem::update(float deltaTime) {
 			//  // Make a check system for possibly collidable entities
 			//}
 
-			rigidBody.Acceleration = glm::zero<glm::vec3>();
+			// Zero out the force
+			rigidBody.Force = glm::zero<glm::vec3>();
 		}
 	}
 }

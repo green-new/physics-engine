@@ -55,6 +55,9 @@
     <Filter Include="Source Files\physics">
       <UniqueIdentifier>{7bcdbde0-8f94-4c2a-a842-8aa12cff6e91}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\data">
+      <UniqueIdentifier>{4f36e338-223d-4039-abe2-e208ca68aede}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -207,6 +210,15 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="gjk.hpp">
+      <Filter>Header Files\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="data.h">
+      <Filter>Header Files\data</Filter>
+    </ClInclude>
+    <ClInclude Include="octree.hpp">
+      <Filter>Header Files\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="box.hpp">
       <Filter>Header Files\physics</Filter>
     </ClInclude>
   </ItemGroup>

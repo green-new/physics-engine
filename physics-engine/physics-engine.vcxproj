@@ -161,12 +161,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="appearence.hpp" />
+    <ClInclude Include="box.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="camera_system.hpp" />
     <ClInclude Include="components.hpp" />
     <ClInclude Include="component_array.hpp" />
     <ClInclude Include="component_manager.hpp" />
     <ClInclude Include="coordinator.hpp" />
+    <ClInclude Include="data.h" />
     <ClInclude Include="entity_manager.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="gjk.hpp" />
@@ -175,6 +177,7 @@
     <ClInclude Include="key_subscription.hpp" />
     <ClInclude Include="mesh.hpp" />
     <ClInclude Include="mouse_manager.hpp" />
+    <ClInclude Include="octree.hpp" />
     <ClInclude Include="orientation.hpp" />
     <ClInclude Include="physics_system.hpp" />
     <ClInclude Include="render_system.hpp" />

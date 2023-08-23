@@ -18,6 +18,8 @@
 #include "resource.hpp"
 #include "input_manager.hpp"
 
+extern Entity mCamera;
+
 const uint16_t width = 1920;
 const uint16_t height = 1080;
 
@@ -25,6 +27,7 @@ bool paused = false;
 bool updateGravity = false;
 bool updateNormals = false;
 bool updatePolygonMode = false;
+bool spawnEntity = false;
 GLenum polygonMode = GL_FILL;
 
 std::unique_ptr<Window> gameWindow;
@@ -38,6 +41,9 @@ void main_input(Input::GLFWKey key, bool state) {
     }
     if (key == GLFWKey::Q && state == GLFW_PRESS) {
         updateGravity = true;
+    }
+    if (key == GLFWKey::P && state == GLFW_PRESS) {
+        spawnEntity = true;
     }
 }
 
@@ -55,7 +61,7 @@ void start() {
     }
 
     resourceManager = std::make_unique<Resources::ResourceManager>();
-    gameWindow->getKeyboardManager().subscribe(&main_input, {Input::GLFWKey::Escape, Input::GLFWKey::Q}, 2);
+    gameWindow->getKeyboardManager().subscribe(&main_input, {Input::GLFWKey::Escape, Input::GLFWKey::Q, Input::GLFWKey::P}, 3);
     resourceManager->init();
 
     // Register the components
@@ -79,7 +85,7 @@ void destroy() {
 }
 
 void run() {
-    const float PHYS_FREQ = 1000.0f; // 1000 Hz
+    const float PHYS_FREQ = 25; // 1000 Hz
     const float RENDER_FREQ = 500.0f;  // 500 Hz
 
     double      deltaTime = 0.0f,
@@ -120,7 +126,7 @@ void run() {
     std::uniform_real_distribution<> z_dist(-20.0f, 20.0f);
     std::uniform_real_distribution<float> zero_to_one(0.0f, 1.0f);
     std::uniform_real_distribution<float> one_to_100(1.0f, 2.5f);
-    std::uniform_real_distribution<float> neg_to_pos(-100.0f, 100.0f);
+    std::uniform_real_distribution<float> neg_to_pos(0.0f, 100.0f);
     std::uniform_int_distribution<> shape_dist(0, 3);
 
     std::shared_ptr<Components::RenderShape> shape = std::make_shared<Components::RenderShape>(Components::RenderShape{
@@ -150,8 +156,7 @@ void run() {
             .Anchored = false,
             .Mass = mass,
             .Velocity = glm::vec3(0.0f),
-            .Acceleration = glm::vec3(neg_to_pos(gen), neg_to_pos(gen), neg_to_pos(gen)), // Give us a random accel. you bum.
-            .NetForce = glm::vec3(0.0f), // Idk wth this does yet.
+            .Force = glm::vec3(neg_to_pos(gen), neg_to_pos(gen), neg_to_pos(gen)), // Idk wth this does yet.
             });
     }
 
@@ -217,6 +222,37 @@ void run() {
         if (updateGravity) {
             physicsSystem->switchGravity();
             updateGravity = false;
+        }
+
+        if (spawnEntity) {
+            spawnEntity = false;
+
+            Entity entity = gCoordinator.createEntity();
+            const float mass = one_to_100(gen);
+            const glm::vec3 force = gCoordinator.getComponent<Components::Orientation>(mCamera).Front * 10000.0f;
+            gCoordinator.addComponent(entity, Components::Transform{
+                .Position = gCoordinator.getComponent<Components::Transform>(mCamera).Position + gCoordinator.getComponent<Components::Orientation>(mCamera).Front * 10.0f,
+                .Rotation = glm::vec3(0.0f),
+                .Scale = glm::vec3(1.0f) * mass,
+                .RotationAngle = 0.0f
+                });
+            unsigned int index = shape_dist(gen);
+            gCoordinator.addComponent(entity, Components::RenderShape{
+                .Shape = shape.get()->Shape
+                });
+            gCoordinator.addComponent(entity, Components::Appearence{
+                .Texture = resourceManager->getTexture("cloud"),
+                .Opacity = zero_to_one(gen),
+                .Reflectance = 0.0f,
+                .BaseColor = glm::vec3(zero_to_one(gen), zero_to_one(gen), zero_to_one(gen))
+                });
+            gCoordinator.addComponent(entity, Components::RigidBody{
+                .Shape = resourceManager->getGeometry("sphere"),
+                .Anchored = false,
+                .Mass = mass,
+                .Velocity = glm::vec3(0.0f),
+                .Force = force,
+                });
         }
 
         gameWindow->updateKeyboard();

@@ -7,7 +7,6 @@ namespace Components {
 		bool Anchored;
 		float Mass;
 		glm::vec3 Velocity;
-		glm::vec3 Acceleration;
-		glm::vec3 NetForce;
+		glm::vec3 Force;
 	};
 }
