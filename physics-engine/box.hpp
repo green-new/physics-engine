@@ -13,7 +13,7 @@ struct BoundingBox {
 		min = other.min;
 		max = other.max;
 	}
-	bool overlaps(const BoundingBox& other) {
+	bool overlaps(const BoundingBox& other) const {
 		return (max.x >= other.min.x && other.max.x >= min.x) ||
 			(max.y >= other.min.y && other.max.y >= min.y) ||
 			(max.z >= other.min.z && other.max.z >= min.z);

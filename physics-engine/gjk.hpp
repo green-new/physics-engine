@@ -1,5 +1,6 @@
 #pragma once
 #include "geometry.hpp"
+#include "box.hpp"
 
 namespace Physics {
 
@@ -32,7 +33,12 @@ namespace Physics {
 	};
 
 	class Collider {
+	private:
+		BoundingBox m_region;
 	public:
+		const BoundingBox& getRegion() const {
+			return m_region;
+		}
 		virtual glm::vec3 support(glm::vec3 direction) const = 0;
 	};
 
