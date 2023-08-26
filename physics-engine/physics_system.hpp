@@ -14,6 +14,11 @@ namespace Systems {
 
 	};
 
+	class CollisionTree {
+	private:
+		CollisionTree* children;
+	};
+
 	class PhysicsSystem : public System {
 	public:
 		void init();
@@ -22,5 +27,6 @@ namespace Systems {
 		void switchGravity();
 	private:
 		bool gravity;
+
 	};
 }
