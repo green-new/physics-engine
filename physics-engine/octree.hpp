@@ -97,12 +97,49 @@ namespace Physics {
 		friend CollisionTree;
 	};
 
+	struct CollisionPair {
+		const std::shared_ptr<Collider>& colliderA;
+		const std::shared_ptr<Collider>& colliderB;
+	};
+
 	class CollisionTree {
 	private:
 		const std::shared_ptr<TreeNode> m_root;
+
+		void broadPhase(const std::shared_ptr<TreeNode>& node, std::vector<CollisionPair>& candidates) {
+			NodeData& data = node->getData();
+
+			// Overlap check
+			for (const std::shared_ptr<Collider>& A : node->getData().m_colliders) {
+				for (const std::shared_ptr<Collider>& B : node->getData().m_colliders) {
+					if (A != B && A->getRegion().overlaps(B->getRegion())) {
+						candidates.push_back(CollisionPair{A, B});
+					}
+				}
+			}
+
+			if (!node->m_isLeaf) {
+				for (unsigned int i = 0; i < 8; i++) {
+					if ((node->m_childrenUsedMask & (1 << i)) != 1) {
+						continue;
+					}
+					std::shared_ptr<TreeNode>& child = node->m_children[i];
+					broadPhase(child, candidates);
+				}
+			}
+		}
+
 	public:
 		CollisionTree(std::shared_ptr<TreeNode> root) : m_root(root) { }
 		~CollisionTree() {}
+
+		std::vector<CollisionPair> broadPhase() {
+			std::vector<CollisionPair> candidates;
+
+			broadPhase(m_root, candidates);
+
+			return candidates;
+		}
 
 		friend NodeData;
 		friend TreeNode;

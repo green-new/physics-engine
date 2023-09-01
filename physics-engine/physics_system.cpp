@@ -9,6 +9,7 @@ extern Coordinator gCoordinator;
 
 void PhysicsSystem::init() {
 	gravity = true;
+
 }
 
 void PhysicsSystem::switchGravity() {
