@@ -42,7 +42,7 @@ namespace Physics {
 		virtual glm::vec3 support(glm::vec3 direction) const = 0;
 	};
 
-	class MeshCollider : Collider {
+	class MeshCollider : public Collider {
 	private:
 		std::vector<glm::vec3> vertices;
 	public:

@@ -2,213 +2,221 @@
 #include "box.hpp"
 #include "gjk.hpp"
 #include <queue>
+#include <stack>
 #include <algorithm>
 
 namespace Physics {
-	/* octree containing entities that could be colliding */
+
+	class NodeData {
+	private:
+		std::vector<std::shared_ptr<Collider>>	m_colliders;									// Keep colliders by-value (collision tree has true refernece to the objects)
+		const BoundingBox m_region;
+	public:
+		NodeData()																					: m_colliders(), m_region() { }
+		NodeData(std::initializer_list<std::shared_ptr<Collider>> colliders, BoundingBox region)	: m_colliders(colliders), m_region(region) {}
+		NodeData(std::vector<std::shared_ptr<Collider>> colliders, BoundingBox region)				: m_colliders(colliders), m_region(region) {}
+		~NodeData() {}
+
+		bool				isEmpty() const	{ return m_colliders.empty(); }
+		const BoundingBox&	getRegion()	const { return m_region; }
+		unsigned int		getColliderCount() const { return m_colliders.size(); }
+		void				add(const std::shared_ptr<Collider>& collider) { m_colliders.push_back(collider); }
+		void				addAll(const std::vector<std::shared_ptr<Collider>>& colliders) { for (auto it = colliders.begin(); it != colliders.end(); ++it) { m_colliders.push_back(*it); } }
+		void				remove(const Collider& collider) { 
+			std::remove_if(m_colliders.begin(), m_colliders.end(), [&collider](const Collider& other)
+				{ return &collider == &other; }); 
+		}
+
+		friend CollisionTree;
+		friend TreeNode;
+	};
+
+	class TreeNode {
+	private:
+		NodeData										m_data;
+		const std::shared_ptr<TreeNode>					m_parent;
+		std::array<std::shared_ptr<TreeNode>, 8>		m_children;
+
+		unsigned char									m_childrenUsedMask;
+		bool											m_isLeaf;
+	public:
+		TreeNode(const std::shared_ptr<TreeNode> parent, const BoundingBox region, const std::vector<std::shared_ptr<Collider>>& colliders) : 
+			m_isLeaf(true), 
+			m_childrenUsedMask(0), 
+			m_children({}), 
+			m_parent(parent), 
+			m_data(colliders, region) { }
+		~TreeNode() {}
+
+		NodeData& getData() { return m_data; }
+
+		void split() {
+			std::array<BoundingBox, 8> octletRegions = m_data.getRegion().octlets();
+			std::array<std::vector<std::shared_ptr<Collider>>, 8> childrenColliders{ {} };
+			std::vector<std::shared_ptr<Collider>> delist{};	// Colliders to remove from this node later on
+			unsigned char usedChildren = 0;
+			const std::shared_ptr<TreeNode> me = std::make_shared<TreeNode>(this);
+			for (unsigned int i = 0; i < 8; i++) {
+				const BoundingBox& region = octletRegions[i];
+
+				// Find the region overlaps for each collider in each collider
+				for (auto it = m_data.m_colliders.begin(); it != m_data.m_colliders.end(); ++it) {
+					if ((*it).get()->getRegion().overlaps(region)) {
+						delist.push_back(*it);
+						childrenColliders[i].push_back(*it);
+						usedChildren |= (1 << i);
+					}
+				}
+			}
+
+			// Create the children or add them to existing ones
+			for (unsigned int i = 0; i < 8; i++) {
+				if (usedChildren & (1 << i)) {
+					m_children[i]->getData().addAll(childrenColliders[i]);
+				}
+				else {
+					const BoundingBox& region = octletRegions[i];
+					m_children[i] = std::make_shared<TreeNode>(new TreeNode(me, region, childrenColliders[i]));
+				}
+			}
+
+			// Removing the elements from this node. An object can exist in 8 octlets at maximum
+			for (auto it = delist.begin(); it != delist.end(); ++it) {
+				std::remove_if(m_data.m_colliders.begin(), m_data.m_colliders.end(), [&it](const std::shared_ptr<Collider> collider) {
+					return *it == collider;
+					});
+			}
+		}
+
+		std::shared_ptr<TreeNode> getChild(unsigned i) {
+			assert(i >= 0 && i < 8, "Invalid index for child (must be between 0 and 8)");
+			return m_children[i];
+		}
+
+		friend NodeData;
+		friend CollisionTree;
+	};
+
 	class CollisionTree {
 	private:
-		BoundingBox m_region;
-		CollisionTree* m_parent;
-		std::vector<Physics::Collider> m_colliders;
-		std::queue<Physics::Collider> m_pending;
-		std::array<CollisionTree*, 8> m_children;
-		unsigned char m_used;
-		unsigned short updatesWhileEmpty = 0;
-
-		bool m_isLeaf;
-		
-		/* number of entities allowed until the octant is split */
-		static constexpr unsigned short maxEntities = 3;
-
-		/* number of updates allowed for an octant to live if there are no entities in it */
-		static constexpr unsigned short updatesUntilDeath = 8;
+		const std::shared_ptr<TreeNode> m_root;
 	public:
-		CollisionTree() : m_region(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			m_colliders(),
-			m_pending(), 
-			m_children(), 
-			m_parent(),
-			m_isLeaf(true),
-			m_used(0) {}
+		CollisionTree(std::shared_ptr<TreeNode> root) : m_root(root) { }
+		~CollisionTree() {}
 
-		CollisionTree(BoundingBox region, std::vector<Physics::Collider> colliders, CollisionTree* parent) : m_region(region), 
-			m_colliders(colliders), 
-			m_pending(), 
-			m_children(), 
-			m_parent(parent),
-			m_isLeaf(true),
-			m_used(0) {}
-		
-		~CollisionTree() {
-			// Cascade deletion
-			delete m_children[0]; 
-			delete m_children[1];
-			delete m_children[2];
-			delete m_children[3];
-			delete m_children[4];
-			delete m_children[5];
-			delete m_children[6];
-			delete m_children[7];
-		}
+		friend NodeData;
+		friend TreeNode;
+	};
 
-		BoundingBox& getRegion() {
-			return m_region;
-		}
+	class CollisionTreeFactory {
+	private:
+		class FactoryPhase {
+		public:
+			virtual std::shared_ptr<FactoryPhase> advance() = 0;
+			virtual ~FactoryPhase() {}
+		};
 
-		void update() {
-			// Empty the queue
-			while (!m_pending.empty()) {
-				auto& collider = m_pending.front();
-				m_colliders.push_back(collider);
-				m_pending.pop();
-			}
-			// Get the enclosing cube before building
-			solveInitialSpace();
+		class TreeFinalizationPhase : public FactoryPhase {
+		private:
+			std::unique_ptr<CollisionTree> m_tree;
+		public:
+			TreeFinalizationPhase(std::shared_ptr<TreeNode> root) : m_tree(std::make_unique<CollisionTree>(root)) { }
+			~TreeFinalizationPhase() {}
+			std::shared_ptr<FactoryPhase> advance() override { return std::make_unique<TreeFinalizationPhase>(this);  }
+			std::unique_ptr<CollisionTree> getTree() { return std::move(m_tree); }
+		};
 
-			build();
-		}
+		class TreeConstructionPhase : public FactoryPhase {
+		private:
+			std::shared_ptr<TreeNode>				m_root;
+			std::vector<std::shared_ptr<Collider>>	m_colliders;
 
-		void addPending(const Physics::Collider& object) {
-			m_pending.push(object);
-		}
+			static constexpr unsigned short			maxColliders = 3; /* number of entities allowed until the octant is split */
+		public:
+			TreeConstructionPhase(std::vector<std::shared_ptr<Collider>> colliders) :
+				m_colliders(colliders),
+				m_root(std::make_shared<TreeNode>(new TreeNode(nullptr, rootSpace(m_colliders), m_colliders))) { }
+			~TreeConstructionPhase() {}
 
-		// Move collider from this to child
-		void moveInto(Physics::Collider& collider, unsigned char index) {
-			m_used |= (unsigned char)(1 << index);
-			m_children[index]->m_colliders.push_back(std::move(collider));
-		}
-
-		/* ONLY WORKS moving colliders down 1 level */
-		void moveCollidersDown() {
-			// Check which regions our colliders are in
-			for (auto it = m_colliders.begin(); it != m_colliders.end(); ++it) {
-				for (unsigned char i = 0; i < 8; i++) {
-					CollisionTree* child = m_children[i];
-
-					// Move our collider down the node
-					if ((*it).getRegion().overlaps(child->getRegion())) {
-						moveInto(*it, i);
-
-						// if we have too many entities, split
-						if (child->m_colliders.size() > maxEntities) {
-							child->build();
-						}
+			BoundingBox rootSpace(const std::vector<std::shared_ptr<Collider>>& initial) {
+				int axis = 1;
+				BoundingBox enclosing;
+				glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
+				for (auto it = initial.begin(); it != initial.end(); ++it) {
+					Collider& collider = *(*it).get();
+					enclosing = BoundingBox(-axis, -axis, -axis, axis, axis, axis);
+					enclosing.offset(center);
+					if (!collider.getRegion().overlaps(enclosing)) {
+						axis <<= 1;
 					}
 				}
+				return enclosing;
 			}
-		}
-
-		/* get the largest power of 2 cube enclosing entities down this node (primarily used with the root node) */
-		void solveInitialSpace() {
-
-			// Must be root node or we get weird octants
-			if (m_parent != nullptr) {
-
-				// See if there are any colliders not within the current region
-				bool orphansExist = false;
-				for (auto& collider : m_colliders) {
-					if (!collider.getRegion().overlaps(m_region)) {
-						orphansExist = true;
-						break;
-					}
+			void build(std::shared_ptr<TreeNode> node) {
+				static BoundingBox minimumRegion = BoundingBox(-0.1f, -0.1f, -0.1f, 0.1f, 0.1f, 0.1f);
+				if (node.get()->getData().getColliderCount() <= maxColliders ||
+					node.get()->getData().getRegion().smallerOrAt(minimumRegion)) {
+					return;
 				}
 
-				if (orphansExist) {
-					signed int min = -1, max = 1;
-					// 0, 0, 0 should be the center (world coordinates)
-					BoundingBox enclosingCube(min, min, min, max, max, max);
-					// TODO: List vs vector here
-					std::list<Physics::Collider&> dummy(m_colliders.begin(), m_colliders.end());
-					while (!dummy.empty()) {
-						enclosingCube.min = glm::vec3(min, min, min); enclosingCube.max = glm::vec3(max, max, max);
-						dummy.remove_if([enclosingCube](Physics::Collider c) {
-							c.getRegion().overlaps(enclosingCube);
-							});
-						min << 1;			// Check if endianness matters on other machines
-						max << 1;
-					}
-					m_region = enclosingCube;
-				}
-			}
-		}
+				node.get()->split();
 
-		void createChildren() {
-			// True center of the bounding box
-			glm::vec3 center = m_region.center();
-
-			// Utilize the heap and not the stack because our octree is probably gonna be huge
-			for (unsigned char i = 0; i < 8; i++) {
-				m_children[i] = new CollisionTree(BoundingBox(), std::vector<Physics::Collider>(), this);
-
-				// We aren't a leaf anymore
-				m_isLeaf = false;
-
-				// Test and debug (thanks chatgpt)
-				m_children[i]->m_region.min = glm::vec3(
-					(i & 1) ? center.x : m_region.min.x,
-					(i & 2) ? center.y : m_region.min.y,
-					(i & 4) ? center.z : m_region.min.z
-				);
-				m_children[i]->m_region.max = glm::vec3(
-					(i & 1) ? m_region.max.x : center.x,
-					(i & 2) ? m_region.max.y : center.y,
-					(i & 4) ? m_region.max.z : center.z
-				);
-			}
-		}
-
-		/* Recursive function that builds the tree from the current position */
-		void build() {
-			// Base case
-			if (m_colliders.size() <= maxEntities) {
-				return;
-			}
-
-			createChildren();
-
-			moveCollidersDown();
-		}
-
-		/* Start at the root node and insert the collider */
-		/* ONLY WORKS moving colliders down 1 level */
-		void insertAtRoot(Physics::Collider* collider) {
-			if (m_parent != nullptr) {
-				if (m_isLeaf) {
-					createChildren();
-				}
-				for (unsigned char i = 0; i < 8; i++) {
-					auto child = m_children[i];
-					if (child->m_region.overlaps(collider->getRegion())) {
-						// Only insert if we are a leaf (smallest subregion that contains this region)
-						if (m_isLeaf) {
-							m_children[i]->m_colliders.push_back(*collider);
-						}
-						insertAtRoot(collider);
-					}
-				}
-			}
-		}
-
-		/* start at any node and find where to insert the collider */
-		/* ONLY WORKS moving colliders down 1 level */
-		void insertAtNode(Physics::Collider* collider) {
-			if (m_isLeaf) {
-				createChildren();
-			}
-			for (unsigned char i = 0; i < 8; i++) {
-				auto child = m_children[i];
-				if (child->m_region.overlaps(collider->getRegion())) {
-					// Only insert if we are a leaf
-					if (m_isLeaf) {
-						m_children[i]->m_colliders.push_back(*collider);
-					}
-					insertAtRoot(collider);
+				for (unsigned int i = 0; i < 8; i++) {
+					build(node.get()->getChild(i));
 				}
 			}
 
-			// Base case
-			return;
+			std::shared_ptr<FactoryPhase> advance() override {
+				if (m_colliders.empty()) return;
+
+				m_root.get()->getData().addAll(m_colliders);
+
+				build(m_root);
+
+				return std::make_shared<TreeFinalizationPhase>(m_root);
+			}
+		};
+		class ColliderCollectionPhase : public FactoryPhase {
+		private:
+			std::queue<std::shared_ptr<Collider>> m_pending;
+		public:
+			ColliderCollectionPhase() {}
+			~ColliderCollectionPhase() {}
+
+			void pushAll(const std::vector<std::shared_ptr<Collider>>& colliders) { for (auto it = colliders.begin(); it != colliders.end(); ++it) { m_pending.push(*it); } }
+			void pushAll(const std::initializer_list<std::shared_ptr<Collider>>& colliders) { pushAll(std::vector<std::shared_ptr<Collider>>(colliders)); }
+			void push(const std::shared_ptr<Collider>& collider) { m_pending.push(collider); }
+			void pop() { m_pending.pop(); }
+			std::shared_ptr<FactoryPhase> advance() override {
+				std::vector<std::shared_ptr<Collider>> initial;
+				while (!m_pending.empty()) {
+					initial.push_back(m_pending.front());
+					m_pending.pop();
+				}
+				return std::make_shared<TreeConstructionPhase>(initial);
+			}
+		};
+
+		FactoryPhase* phase;
+
+	public:
+		CollisionTreeFactory() : phase(new ColliderCollectionPhase) { }
+		~CollisionTreeFactory() { }
+
+		void addPending(std::shared_ptr<Collider> collider) {
+			((ColliderCollectionPhase*)phase)->push(collider);
+		}
+
+		void addPending(std::vector<std::shared_ptr<Collider>> colliders) {
+			((ColliderCollectionPhase*)phase)->pushAll(colliders);
+		}
+
+		std::shared_ptr<FactoryPhase> advance() {
+			return phase->advance();
+		}
+
+		std::unique_ptr<CollisionTree> finalizeTree() {
+			return ((TreeFinalizationPhase*)phase)->getTree();
 		}
 	};
 }
