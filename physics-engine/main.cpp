@@ -34,15 +34,14 @@ std::unique_ptr<Window> gameWindow;
 std::unique_ptr<Resources::ResourceManager> resourceManager;
 Coordinator gCoordinator;
 
-void main_input(Input::GLFWKey key, bool state) {
-    using namespace Input;
-    if (key == GLFWKey::Escape && state == GLFW_PRESS) {
+void main_input(const int key, const int scancode, const int action, const int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(gameWindow->getHandle(), true);
     }
-    if (key == GLFWKey::Q && state == GLFW_PRESS) {
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         updateGravity = true;
     }
-    if (key == GLFWKey::P && state == GLFW_PRESS) {
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
         spawnEntity = true;
     }
 }
@@ -61,7 +60,7 @@ void start() {
     }
 
     resourceManager = std::make_unique<Resources::ResourceManager>();
-    gameWindow->getKeyboardManager().subscribe(&main_input, {Input::GLFWKey::Escape, Input::GLFWKey::Q, Input::GLFWKey::P}, 3);
+    gameWindow->getKeyboardManager().subscribe(&main_input, {GLFW_KEY_ESCAPE, GLFW_KEY_Q, GLFW_KEY_P});
     resourceManager->init();
 
     // Register the components
@@ -85,7 +84,7 @@ void destroy() {
 }
 
 void run() {
-    const float PHYS_FREQ = 25; // 1000 Hz
+    const float PHYS_FREQ = 500; // 1000 Hz
     const float RENDER_FREQ = 500.0f;  // 500 Hz
 
     double      deltaTime = 0.0f,
@@ -154,9 +153,10 @@ void run() {
         gCoordinator.addComponent(entity, Components::RigidBody{
             .Shape = resourceManager->getGeometry("sphere"),
             .Anchored = false,
+            .onGround = false,
             .Mass = mass,
             .Velocity = glm::vec3(0.0f),
-            .Force = glm::vec3(neg_to_pos(gen), neg_to_pos(gen), neg_to_pos(gen)), // Idk wth this does yet.
+            .Force = glm::vec3(neg_to_pos(gen), neg_to_pos(gen), neg_to_pos(gen)),
             });
     }
 
@@ -254,8 +254,6 @@ void run() {
                 .Force = force,
                 });
         }
-
-        gameWindow->updateKeyboard();
 
         /* Poll for and process events */
         glfwPollEvents();

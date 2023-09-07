@@ -9,7 +9,7 @@ namespace Physics {
 
 	class NodeData {
 	private:
-		std::vector<std::shared_ptr<Collider>>	m_colliders;									// Keep colliders by-value (collision tree has true refernece to the objects)
+		std::vector<std::shared_ptr<Collider>>	m_colliders;
 		const BoundingBox m_region;
 	public:
 		NodeData()																					: m_colliders(), m_region() { }

@@ -25,8 +25,6 @@ public:
 	uint16_t getWidth();
 	uint16_t getHeight();
 
-	void updateKeyboard();
-
 	Input::KeyboardManager& getKeyboardManager();
 	Input::MouseManager& getMouseManager();
 };

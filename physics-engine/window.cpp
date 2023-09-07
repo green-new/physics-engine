@@ -4,12 +4,6 @@ inline void reshapeCallback(GLFWwindow* handle, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void keyCallback(GLFWwindow* a, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-        glfwSetWindowShouldClose(a, 1);
-    }
-}
-
 Window::Window(const uint16_t _width, const uint16_t _height, std::string _title) : width(_width), height(_height), title(_title) {
     // Set the window hints (version, GL profile, window)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -26,7 +20,6 @@ Window::Window(const uint16_t _width, const uint16_t _height, std::string _title
 
     glfwSetInputMode(handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowSizeCallback(handle, reshapeCallback);
-    glfwSetKeyCallback(handle, keyCallback);
 
     /* Make the window's context current */
     glfwMakeContextCurrent(handle);
@@ -36,10 +29,13 @@ Window::Window(const uint16_t _width, const uint16_t _height, std::string _title
     keyboardManager = Input::KeyboardManager();
     glfwSetWindowUserPointer(handle, this);
     auto cursorPosCallback = [](GLFWwindow* handle, double xpos, double ypos) {
-        static_cast<Window*>(glfwGetWindowUserPointer(handle))->mouseManager.updateMouseState(xpos, ypos);
+        static_cast<Window*>(glfwGetWindowUserPointer(handle))->mouseManager.update(xpos, ypos);
     };
+    auto keyboardCallback = [](GLFWwindow* handle, int key, int scancode, int action, int mods) {
+        static_cast<Window*>(glfwGetWindowUserPointer(handle))->keyboardManager.update(key, scancode, action, mods);
+    };
+    glfwSetKeyCallback(handle, keyboardCallback);
     glfwSetCursorPosCallback(handle, cursorPosCallback);
-    // We callback the keyboard manager's callbacks later.
 }
 Window::~Window() {
     glfwDestroyWindow(handle);
@@ -62,7 +58,4 @@ Input::KeyboardManager& Window::getKeyboardManager() {
 }
 Input::MouseManager& Window::getMouseManager() {
     return mouseManager;
-}
-void Window::updateKeyboard() {
-    keyboardManager.callbackAll(handle);
 }

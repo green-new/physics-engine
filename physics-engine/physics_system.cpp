@@ -26,6 +26,26 @@ void PhysicsSystem::collision(Entity base, float deltaTime) {
 	}
 }
 
+void worldFloor(Entity entity) {
+	auto& transform = gCoordinator.getComponent<Components::Transform>(entity);
+	auto& rigidBody = gCoordinator.getComponent<Components::RigidBody>(entity);
+
+	// Clip velocity with world plane
+
+	static glm::vec3 worldNormal = glm::vec3(0.0f, 1.0f, 0.0f);
+	static float	floorY = -32.0f;
+	static float	epsilon = 0.001f;
+
+	if (transform.Position.y < floorY) {
+		rigidBody.onGround = true;
+		float depth = floorY - transform.Position.y;
+		transform.Position.y = floorY;
+	}
+	else {
+		rigidBody.onGround = false;
+	}
+}
+
 void PhysicsSystem::update(float deltaTime) {
 	const glm::vec3 gravityDirection = glm::vec3(0.0f, -9.8f, 0.0f);
 	for (Entity entity : mEntities) {
@@ -35,8 +55,10 @@ void PhysicsSystem::update(float deltaTime) {
 		// Perform movement stuff and make collision checks
 		if (!rigidBody.Anchored) {
 
+			worldFloor(entity);
+
 			// Gravity stuff
-			if (gravity) {
+			if (gravity && !rigidBody.onGround) {
 				/* Move our objects downward */
 				rigidBody.Force += glm::vec3(0.0f, -9.8f, 0.0f) * rigidBody.Mass * 10.0f;
 			}

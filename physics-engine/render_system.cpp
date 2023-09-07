@@ -16,29 +16,34 @@ using namespace Systems;
 
 Entity mCamera;
 
-void camera_movement(const Input::GLFWKey key, const bool state) {
-	using namespace Input;
+std::unordered_map<int, int> player_keys;
+
+void camera_movement(const int key, const int scancode, const int action, const int mods) {
+	player_keys[key] = action;
+}
+
+void update_camera_movement() {
 	auto& transform = gCoordinator.getComponent<Components::Transform>(mCamera);
 	const auto& orientation = gCoordinator.getComponent<Components::Orientation>(mCamera);
 	auto& camera = gCoordinator.getComponent<Components::Camera>(mCamera);
 	static float speed = 0.1f;
-	if (key == GLFWKey::W && state == GLFW_PRESS) {
+
+	if (player_keys[GLFW_KEY_W] != GLFW_RELEASE)
 		transform.Position += speed * orientation.Front;
-	} else if (key == GLFWKey::A && state == GLFW_PRESS) {
-		transform.Position -= speed * orientation.Right;
-	} else if (key == GLFWKey::S && state == GLFW_PRESS) {
+	if (player_keys[GLFW_KEY_S] != GLFW_RELEASE)
 		transform.Position -= speed * orientation.Front;
-	} else if (key == GLFWKey::D && state == GLFW_PRESS) {
+	if (player_keys[GLFW_KEY_A] != GLFW_RELEASE)
+		transform.Position -= speed * orientation.Right;
+	if (player_keys[GLFW_KEY_D] != GLFW_RELEASE)
 		transform.Position += speed * orientation.Right;
-	}
 }
 
 void camera_look(const Input::MouseState& mouse) {
 	static double sensitivity = 0.05f;
 	auto& orientation = gCoordinator.getComponent<Components::Orientation>(mCamera);
 	auto& camera = gCoordinator.getComponent<Components::Camera>(mCamera);
-	double yawOff = mouse.deltaX * sensitivity;
-	double pitchOff = mouse.deltaY * sensitivity;
+	double yawOff = mouse.deltaX() * sensitivity;
+	double pitchOff = -mouse.deltaY() * sensitivity;
 	camera.Yaw += yawOff;
 	camera.Pitch += pitchOff;
 	if (camera.Pitch > 89.0f)
@@ -74,7 +79,7 @@ void RenderSystem::init() {
 			.Yaw = -90.0f
 		});
 
-	gameWindow->getKeyboardManager().subscribe(&camera_movement, {Input::GLFWKey::W, Input::GLFWKey::A, Input::GLFWKey::S, Input::GLFWKey::D }, 4);
+	gameWindow->getKeyboardManager().subscribe(&camera_movement, {GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D });
 	gameWindow->getMouseManager().subscribe(&camera_look);
 
 	mShader.use();
@@ -92,6 +97,7 @@ void RenderSystem::update(float deltaTime) {
 	mSkybox.onProjectionUpdate(camera.Projection);
 	mSkybox.draw(glm::mat3(view));
 	camera.update(camera_orientation);
+	update_camera_movement();
 
 	mShader.use();
 	mShader.set_mat4("view", view);
