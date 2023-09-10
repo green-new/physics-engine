@@ -1,259 +1,165 @@
 #pragma once
 #include "box.hpp"
 #include "gjk.hpp"
-#include <queue>
-#include <stack>
-#include <algorithm>
+#include "types.hpp"
+#include <set>
+#include <functional>
+#include <vector>
 
 namespace Physics {
 
+	struct EntityCollisionPair {
+		const Entity colliderA;
+		const Entity colliderB;
+	};
+
 	class NodeData {
 	private:
-		std::vector<std::shared_ptr<Collider>>	m_colliders;
-		const BoundingBox m_region;
-	public:
-		NodeData()																					: m_colliders(), m_region() { }
-		NodeData(std::initializer_list<std::shared_ptr<Collider>> colliders, BoundingBox region)	: m_colliders(colliders), m_region(region) {}
-		NodeData(std::vector<std::shared_ptr<Collider>> colliders, BoundingBox region)				: m_colliders(colliders), m_region(region) {}
-		~NodeData() {}
+		void sort();
 
-		bool				isEmpty() const	{ return m_colliders.empty(); }
+	public:
+		NodeData() : m_entities(), m_region() { }
+		NodeData(std::vector<Entity> entities, BoundingBox region) : m_entities(entities), m_region(region) {}
+		NodeData(std::initializer_list<Entity> entities, BoundingBox region) : m_entities(entities), m_region(region) {}
+		~NodeData() = default;
+
+		bool	isEmpty() const	{ return m_entities.empty(); }
 		const BoundingBox&	getRegion()	const { return m_region; }
-		unsigned int		getColliderCount() const { return m_colliders.size(); }
-		void				add(const std::shared_ptr<Collider>& collider) { m_colliders.push_back(collider); }
-		void				addAll(const std::vector<std::shared_ptr<Collider>>& colliders) { for (auto it = colliders.begin(); it != colliders.end(); ++it) { m_colliders.push_back(*it); } }
-		void				remove(const Collider& collider) { 
-			std::remove_if(m_colliders.begin(), m_colliders.end(), [&collider](const Collider& other)
-				{ return &collider == &other; }); 
-		}
+		unsigned int	getColliderCount() const { return m_entities.size(); }
+		void	add(const Entity entity);
+		void	addAll(const std::vector<Entity> entities);
+		void	remove(const Entity entity);
+		void	removeAll(const std::vector<Entity> entities);
+		void	removeAll();
+
+		const std::vector<Entity>& getEntities() const { return m_entities; }
+		std::vector<Entity>& getEntities() { return m_entities; }
+
+		std::set<Physics::EntityCollisionPair> getUniquePairs(std::function<bool(const Entity& A, const Entity& B)> predicate) const;
 
 		friend CollisionTree;
 		friend TreeNode;
+
+	private:
+		std::vector<Entity>	m_entities;
+		const BoundingBox m_region;
 	};
 
 	class TreeNode {
 	private:
-		NodeData										m_data;
-		const std::shared_ptr<TreeNode>					m_parent;
-		std::array<std::shared_ptr<TreeNode>, 8>		m_children;
+		void createChild(unsigned int index, const BoundingBox& region, const std::vector<Entity>& entity);
 
-		unsigned char									m_childrenUsedMask;
-		bool											m_isLeaf;
 	public:
-		TreeNode(const std::shared_ptr<TreeNode> parent, const BoundingBox region, const std::vector<std::shared_ptr<Collider>>& colliders) : 
+		TreeNode(TreeNode *parent, const BoundingBox region, const std::vector<Entity>& entities) : 
 			m_isLeaf(true), 
 			m_childrenUsedMask(0), 
-			m_children({}), 
+			m_children(), 
 			m_parent(parent), 
-			m_data(colliders, region) { }
-		~TreeNode() {}
+			m_data(entities, region) { }
+		~TreeNode() {
+			for (unsigned int i = 0; i < 8; i++) {
+				delete m_children[i];
+			}
+		}
 
 		NodeData& getData() { return m_data; }
+		const NodeData& getData() const { return m_data; }
 
-		void split() {
-			std::array<BoundingBox, 8> octletRegions = m_data.getRegion().octlets();
-			std::array<std::vector<std::shared_ptr<Collider>>, 8> childrenColliders{ {} };
-			std::vector<std::shared_ptr<Collider>> delist{};	// Colliders to remove from this node later on
-			unsigned char usedChildren = 0;
-			const std::shared_ptr<TreeNode> me = std::make_shared<TreeNode>(this);
-			for (unsigned int i = 0; i < 8; i++) {
-				const BoundingBox& region = octletRegions[i];
-
-				// Find the region overlaps for each collider in each collider
-				for (auto it = m_data.m_colliders.begin(); it != m_data.m_colliders.end(); ++it) {
-					if ((*it).get()->getRegion().overlaps(region)) {
-						delist.push_back(*it);
-						childrenColliders[i].push_back(*it);
-						usedChildren |= (1 << i);
-					}
-				}
-			}
-
-			// Create the children or add them to existing ones
-			for (unsigned int i = 0; i < 8; i++) {
-				if (usedChildren & (1 << i)) {
-					m_children[i]->getData().addAll(childrenColliders[i]);
-				}
-				else {
-					const BoundingBox& region = octletRegions[i];
-					m_children[i] = std::make_shared<TreeNode>(new TreeNode(me, region, childrenColliders[i]));
-				}
-			}
-
-			// Removing the elements from this node. An object can exist in 8 octlets at maximum
-			for (auto it = delist.begin(); it != delist.end(); ++it) {
-				std::remove_if(m_data.m_colliders.begin(), m_data.m_colliders.end(), [&it](const std::shared_ptr<Collider> collider) {
-					return *it == collider;
-					});
-			}
+		const TreeNode& getChild(unsigned int i) const {
+			assert(i >= 0 && i < 8, "Invalid index for child (must be between 0 and 7, inclusive)");
+			return *m_children[i];
+		}
+		TreeNode& getChild(unsigned int i) {
+			assert(i >= 0 && i < 8, "Invalid index for child (must be between 0 and 7, inclusive)");
+			return *m_children[i];
 		}
 
-		std::shared_ptr<TreeNode> getChild(unsigned i) {
-			assert(i >= 0 && i < 8, "Invalid index for child (must be between 0 and 8)");
-			return m_children[i];
-		}
+		void split();
 
 		friend NodeData;
 		friend CollisionTree;
-	};
 
-	struct CollisionPair {
-		const std::shared_ptr<Collider>& colliderA;
-		const std::shared_ptr<Collider>& colliderB;
+	private:
+		NodeData		m_data{};
+		TreeNode *const m_parent{};
+		std::array<TreeNode*, 8> m_children{};
+
+		unsigned char	m_childrenUsedMask{};
+		bool			m_isLeaf{};
 	};
 
 	class CollisionTree {
 	private:
-		const std::shared_ptr<TreeNode> m_root;
-
-		void broadPhase(const std::shared_ptr<TreeNode>& node, std::vector<CollisionPair>& candidates) {
-			NodeData& data = node->getData();
-
-			// Overlap check
-			for (const std::shared_ptr<Collider>& A : node->getData().m_colliders) {
-				for (const std::shared_ptr<Collider>& B : node->getData().m_colliders) {
-					if (A != B && A->getRegion().overlaps(B->getRegion())) {
-						candidates.push_back(CollisionPair{A, B});
-					}
-				}
-			}
-
-			if (!node->m_isLeaf) {
-				for (unsigned int i = 0; i < 8; i++) {
-					if ((node->m_childrenUsedMask & (1 << i)) != 1) {
-						continue;
-					}
-					std::shared_ptr<TreeNode>& child = node->m_children[i];
-					broadPhase(child, candidates);
-				}
-			}
-		}
-
+		void broadPhase(const TreeNode& node, std::set<Physics::EntityCollisionPair>& candidates);
+		void updateRootSize();
 	public:
-		CollisionTree(std::shared_ptr<TreeNode> root) : m_root(root) { }
+		CollisionTree(TreeNode *root) : m_root(root) { }
+		CollisionTree(const CollisionTree& other) : m_root(other.m_root) { }
 		~CollisionTree() {}
 
-		std::vector<CollisionPair> broadPhase() {
-			std::vector<CollisionPair> candidates;
+		std::set<Physics::EntityCollisionPair> broadPhase();
 
-			broadPhase(m_root, candidates);
+		void insert(const Entity entity);
+		void remove(const Entity entity);
 
-			return candidates;
-		}
+		TreeNode& search(const Entity entity);
 
 		friend NodeData;
 		friend TreeNode;
+	private:
+		TreeNode *const m_root;
 	};
 
 	class CollisionTreeFactory {
 	private:
-		class FactoryPhase {
+
+		class TreeFinalizationPhase {
 		public:
-			virtual std::shared_ptr<FactoryPhase> advance() = 0;
-			virtual ~FactoryPhase() {}
+			TreeFinalizationPhase() { }
+			~TreeFinalizationPhase() = default;
+			std::unique_ptr<CollisionTree> createTreeFromRoot(std::unique_ptr<TreeNode>&& root);
 		};
 
-		class TreeFinalizationPhase : public FactoryPhase {
+		class TreeConstructionPhase {
+		public:
+			TreeConstructionPhase(std::vector<Entity> entities) :
+				m_entities(entities),
+				m_root(std::make_unique<TreeNode>(nullptr, rootSpace(entities), m_entities)) { }
+			~TreeConstructionPhase() = default;
+
+			void add(Entity entity) { m_entities.push_back(entity); }
+			void addAll(std::vector<Entity> entities) { for (const Entity& entity : entities) { add(entity); } }
+
+			BoundingBox rootSpace(const std::vector<Entity>& initial);
+
+			std::unique_ptr<TreeNode> constructTree();
 		private:
-			std::unique_ptr<CollisionTree> m_tree;
-		public:
-			TreeFinalizationPhase(std::shared_ptr<TreeNode> root) : m_tree(std::make_unique<CollisionTree>(root)) { }
-			~TreeFinalizationPhase() {}
-			std::shared_ptr<FactoryPhase> advance() override { return std::make_unique<TreeFinalizationPhase>(this);  }
-			std::unique_ptr<CollisionTree> getTree() { return std::move(m_tree); }
+			std::unique_ptr<TreeNode>	m_root;
+			std::vector<Entity>	m_entities;
+
+			static constexpr unsigned short		maxEntities = 3; /* number of entities allowed until the octant is split */
+
+			void build(TreeNode& node);
 		};
 
-		class TreeConstructionPhase : public FactoryPhase {
-		private:
-			std::shared_ptr<TreeNode>				m_root;
-			std::vector<std::shared_ptr<Collider>>	m_colliders;
-
-			static constexpr unsigned short			maxColliders = 3; /* number of entities allowed until the octant is split */
-		public:
-			TreeConstructionPhase(std::vector<std::shared_ptr<Collider>> colliders) :
-				m_colliders(colliders),
-				m_root(std::make_shared<TreeNode>(new TreeNode(nullptr, rootSpace(m_colliders), m_colliders))) { }
-			~TreeConstructionPhase() {}
-
-			BoundingBox rootSpace(const std::vector<std::shared_ptr<Collider>>& initial) {
-				int axis = 1;
-				BoundingBox enclosing;
-				glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-				for (auto it = initial.begin(); it != initial.end(); ++it) {
-					Collider& collider = *(*it).get();
-					enclosing = BoundingBox(-axis, -axis, -axis, axis, axis, axis);
-					enclosing.offset(center);
-					if (!collider.getRegion().overlaps(enclosing)) {
-						axis <<= 1;
-					}
-				}
-				return enclosing;
-			}
-			void build(std::shared_ptr<TreeNode> node) {
-				static BoundingBox minimumRegion = BoundingBox(-0.1f, -0.1f, -0.1f, 0.1f, 0.1f, 0.1f);
-				if (node.get()->getData().getColliderCount() <= maxColliders ||
-					node.get()->getData().getRegion().smallerOrAt(minimumRegion)) {
-					return;
-				}
-
-				node.get()->split();
-
-				for (unsigned int i = 0; i < 8; i++) {
-					build(node.get()->getChild(i));
-				}
-			}
-
-			std::shared_ptr<FactoryPhase> advance() override {
-				if (m_colliders.empty()) return;
-
-				m_root.get()->getData().addAll(m_colliders);
-
-				build(m_root);
-
-				return std::make_shared<TreeFinalizationPhase>(m_root);
-			}
-		};
-		class ColliderCollectionPhase : public FactoryPhase {
-		private:
-			std::queue<std::shared_ptr<Collider>> m_pending;
-		public:
-			ColliderCollectionPhase() {}
-			~ColliderCollectionPhase() {}
-
-			void pushAll(const std::vector<std::shared_ptr<Collider>>& colliders) { for (auto it = colliders.begin(); it != colliders.end(); ++it) { m_pending.push(*it); } }
-			void pushAll(const std::initializer_list<std::shared_ptr<Collider>>& colliders) { pushAll(std::vector<std::shared_ptr<Collider>>(colliders)); }
-			void push(const std::shared_ptr<Collider>& collider) { m_pending.push(collider); }
-			void pop() { m_pending.pop(); }
-			std::shared_ptr<FactoryPhase> advance() override {
-				std::vector<std::shared_ptr<Collider>> initial;
-				while (!m_pending.empty()) {
-					initial.push_back(m_pending.front());
-					m_pending.pop();
-				}
-				return std::make_shared<TreeConstructionPhase>(initial);
-			}
-		};
-
-		FactoryPhase* phase;
+		std::unique_ptr<TreeConstructionPhase> m_construction;
+		std::unique_ptr<TreeFinalizationPhase> m_finalization;
 
 	public:
-		CollisionTreeFactory() : phase(new ColliderCollectionPhase) { }
+		CollisionTreeFactory() : m_construction(std::make_unique<TreeConstructionPhase>()), 
+								m_finalization(std::make_unique<TreeFinalizationPhase>()) { }
 		~CollisionTreeFactory() { }
 
-		void addPending(std::shared_ptr<Collider> collider) {
-			((ColliderCollectionPhase*)phase)->push(collider);
+		void addPending(Entity entity) {
+			m_construction->add(entity);
 		}
 
-		void addPending(std::vector<std::shared_ptr<Collider>> colliders) {
-			((ColliderCollectionPhase*)phase)->pushAll(colliders);
+		void addPending(std::vector<Entity> entities) {
+			m_construction->addAll(entities);
 		}
 
-		std::shared_ptr<FactoryPhase> advance() {
-			return phase->advance();
-		}
-
-		std::unique_ptr<CollisionTree> finalizeTree() {
-			return ((TreeFinalizationPhase*)phase)->getTree();
+		std::unique_ptr<CollisionTree> createTree() {
+			return m_finalization->createTreeFromRoot(m_construction->constructTree());
 		}
 	};
 }

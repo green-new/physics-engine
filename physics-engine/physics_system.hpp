@@ -1,5 +1,6 @@
 #pragma once
 #include "systems.hpp"
+#include "octree.hpp"
 
 namespace Systems {
 	class PhysicsSystem : public System {
@@ -10,6 +11,6 @@ namespace Systems {
 		void switchGravity();
 	private:
 		bool gravity;
-
+		Physics::CollisionTree tree;
 	};
 }

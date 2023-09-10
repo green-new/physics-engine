@@ -3,6 +3,7 @@
 
 namespace Components {
 	struct RigidBody {
+		BoundingBox Region;
 		Geometry::Geometry3D Shape;
 		bool Anchored;
 		bool onGround;

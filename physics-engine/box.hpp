@@ -3,10 +3,10 @@
 #include "glm/glm.hpp"
 
 struct BoundingBox {
-	glm::vec3 min;
-	glm::vec3 max;
+	glm::vec3 min{};
+	glm::vec3 max{};
 
-	BoundingBox() : min(glm::vec3(0.0f)), max(glm::vec3(0.0f)) {}
+	BoundingBox() = default;
 	BoundingBox(glm::vec3 min, glm::vec3 max) : min(min), max(max) {}
 	const BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) : min(glm::vec3(minX, minY, minZ)), max(glm::vec3(maxX, maxY, maxZ)) {}
 

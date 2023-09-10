@@ -149,6 +149,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="mouse_manager.cpp" />
+    <ClCompile Include="octree.cpp" />
     <ClCompile Include="physics_system.cpp" />
     <ClCompile Include="render_system.cpp" />
     <ClCompile Include="resource.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="component_manager.hpp" />
     <ClInclude Include="coordinator.hpp" />
     <ClInclude Include="data.h" />
+    <ClInclude Include="engine.hpp" />
     <ClInclude Include="entity_manager.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="gjk.hpp" />
