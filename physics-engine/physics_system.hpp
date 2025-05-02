@@ -9,8 +9,10 @@ namespace Systems {
 		void update(float deltaTime) override;
 		void collision(Entity base, float deltaTime);
 		void switchGravity();
+		void removeEntity(Entity entity);
+		void future(float futureTime);
 	private:
-		bool gravity;
-		Physics::CollisionTree tree;
+		bool m_gravity;
+		std::set<Entity> m_entitiesScheduledToRemove;
 	};
 }

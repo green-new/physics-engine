@@ -1,9 +1,10 @@
 #include "system_manager.hpp"
+#include <iostream>
 
 void SystemManager::onEntityDestroyed(Entity entity) {
 	for (auto const& pair : mSystems) {
 		auto const& system = pair.second;
-		system->mEntities.erase(entity);
+		system->m_entities.erase(entity);
 	}
 }
 void SystemManager::onEntitySignatureChange(Entity entity, Signature signature) {
@@ -13,10 +14,9 @@ void SystemManager::onEntitySignatureChange(Entity entity, Signature signature) 
 		auto const& systemSignature = mSignatures[type];
 
 		if ((signature & systemSignature) == systemSignature) {
-			system->mEntities.insert(entity);
-		}
-		else {
-			system->mEntities.erase(entity);
+			system->m_entities.insert(entity);
+		} else {
+			system->m_entities.erase(entity);
 		}
 	}
 }

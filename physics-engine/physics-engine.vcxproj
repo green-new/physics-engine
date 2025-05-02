@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\frogf\Desktop\Year 3\Capstone\SkillDevelopment1\physics-engine\physics-engine\include;C:\Users\Green\source\repos\physics-engine\physics-engine\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Green\source\repos\physics-engine\physics-engine\lib;C:\Users\frogf\Desktop\Year 3\Capstone\SkillDevelopment1\physics-engine\physics-engine\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\trist\source\repos\physics-engine\physics-engine\include;C:\Users\frogf\Desktop\Year 3\Capstone\SkillDevelopment1\physics-engine\physics-engine\include;C:\Users\Green\source\repos\physics-engine\physics-engine\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\trist\source\repos\physics-engine\physics-engine\lib;C:\Users\Green\source\repos\physics-engine\physics-engine\lib;C:\Users\frogf\Desktop\Year 3\Capstone\SkillDevelopment1\physics-engine\physics-engine\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -138,6 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="box.cpp" />
     <ClCompile Include="coordinator.cpp" />
     <ClCompile Include="entity_manager.cpp" />
     <ClCompile Include="geometry.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="mouse_manager.cpp" />
     <ClCompile Include="octree.cpp" />
     <ClCompile Include="physics_system.cpp" />
+    <ClCompile Include="plane.cpp" />
     <ClCompile Include="render_system.cpp" />
     <ClCompile Include="resource.cpp" />
     <ClCompile Include="shader.cpp" />
@@ -163,13 +165,13 @@
   <ItemGroup>
     <ClInclude Include="appearence.hpp" />
     <ClInclude Include="box.hpp" />
+    <ClInclude Include="bsp.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="camera_system.hpp" />
     <ClInclude Include="components.hpp" />
     <ClInclude Include="component_array.hpp" />
     <ClInclude Include="component_manager.hpp" />
     <ClInclude Include="coordinator.hpp" />
-    <ClInclude Include="data.h" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="entity_manager.hpp" />
     <ClInclude Include="geometry.hpp" />
@@ -177,6 +179,9 @@
     <ClInclude Include="input_manager.hpp" />
     <ClInclude Include="keyboard_manager.hpp" />
     <ClInclude Include="key_subscription.hpp" />
+    <ClInclude Include="line.hpp" />
+    <ClInclude Include="plane.hpp" />
+    <ClInclude Include="point_light.hpp" />
     <ClInclude Include="mesh.hpp" />
     <ClInclude Include="mouse_manager.hpp" />
     <ClInclude Include="octree.hpp" />

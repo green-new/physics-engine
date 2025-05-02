@@ -9,7 +9,7 @@ namespace Systems {
 class System {
 public:
 	virtual void update(float deltaTime) = 0;
-	std::set<Entity> mEntities;
+	std::set<Entity> m_entities;
 };
 
 #include "camera_system.hpp"

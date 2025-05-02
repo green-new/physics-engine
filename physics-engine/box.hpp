@@ -1,52 +1,37 @@
 #pragma once
 #include <array>
+#include <vector>
 #include "glm/glm.hpp"
+#include <string>
 
 struct BoundingBox {
+	/**
+	 * The lowest coordinate of this bounding box.
+	 */
 	glm::vec3 min{};
+	/**
+	 * The highest coordinate of this bounding box.
+	 */
 	glm::vec3 max{};
+	/**
+	 * The center coordinate of this bounding box.
+	 */
+	glm::vec3 center{};
+	/**
+	 * A interim variable that says this bounding box is currently overlapping with another object.
+	 */
+	bool overlapping{};
 
 	BoundingBox() = default;
-	BoundingBox(glm::vec3 min, glm::vec3 max) : min(min), max(max) {}
-	const BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) : min(glm::vec3(minX, minY, minZ)), max(glm::vec3(maxX, maxY, maxZ)) {}
+	BoundingBox(glm::vec3 min, glm::vec3 max) : min(min), max(max), center(0.0f), overlapping(false) {}
+	BoundingBox(glm::vec3 min, glm::vec3 max, glm::vec3 center) : min(min), max(max), center(center), overlapping(false) {}
+	BoundingBox(glm::vec3 min, glm::vec3 max, glm::vec3 center, glm::vec3 rotation) : min(min), max(max), center(center), overlapping(false) {}
+	constexpr BoundingBox(float lenX, float lenY, float lenZ) : min(glm::vec3(-lenX / 2.0f, -lenY / 2.0f, -lenZ / 2.0f)), max(glm::vec3(lenX / 2.0f, lenY / 2.0f, lenZ / 2.0f)), center(0.0f), overlapping(false) {}
+	constexpr BoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) : min(glm::vec3(minX, minY, minZ)), max(glm::vec3(maxX, maxY, maxZ)), center(0.0f), overlapping(false) {}
+	constexpr BoundingBox(const BoundingBox& other, glm::vec3 worldPos) : min(other.min + worldPos), max(other.max + worldPos), center(worldPos), overlapping(false) {}
+	BoundingBox& operator=(const BoundingBox& other);
 
-	BoundingBox& operator=(const BoundingBox& other) {
-		min = other.min;
-		max = other.max;
-	}
-	bool overlaps(const BoundingBox& other) const {
-		return (max.x >= other.min.x && other.max.x >= min.x) ||
-			(max.y >= other.min.y && other.max.y >= min.y) ||
-			(max.z >= other.min.z && other.max.z >= min.z);
-	}
-	void offset(glm::vec3 offset) {
-		min += offset;
-		max += offset;
-	}
-	glm::vec3 center() const {
-		return (max - min) / 2.0f;
-	}
-	std::array<BoundingBox, 8> octlets() const {
-		glm::vec3 c = center();
-		std::array<BoundingBox, 8> octlets{};
-		for (unsigned char i = 0; i < 8; i++) {
-			octlets[i].min.x = (i & 1) ? c.x : min.x;
-			octlets[i].min.y = (i & 2) ? c.y : min.y;
-			octlets[i].min.z = (i & 4) ? c.z : min.z;
-
-			octlets[i].max.x = (i & 1) ? max.x : c.x;
-			octlets[i].max.y = (i & 2) ? max.y : c.y;
-			octlets[i].max.z = (i & 4) ? max.z : c.z;
-		}
-
-		return octlets;
-	}
-
-	float volume() const {
-		return (max.x - min.x) * (max.y - min.y) * (max.z - min.z);
-	}
-
-	bool smallerOrAt(const BoundingBox& smallest) const {
-		return volume() <= smallest.volume();
-	}
+	bool overlaps(const BoundingBox& other) const;
+	glm::vec3 overlap(const BoundingBox& other) const;
+	std::string toString();
 };

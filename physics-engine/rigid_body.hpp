@@ -1,9 +1,10 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "box.hpp"
 
 namespace Components {
 	struct RigidBody {
-		BoundingBox Region;
+		BoundingBox Box;
 		Geometry::Geometry3D Shape;
 		bool Anchored;
 		bool onGround;

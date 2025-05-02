@@ -28,14 +28,18 @@ void update_camera_movement() {
 	auto& camera = gCoordinator.getComponent<Components::Camera>(mCamera);
 	static float speed = 0.1f;
 
-	if (player_keys[GLFW_KEY_W] != GLFW_RELEASE)
+	if (player_keys[GLFW_KEY_W] != GLFW_RELEASE) {
 		transform.Position += speed * orientation.Front;
-	if (player_keys[GLFW_KEY_S] != GLFW_RELEASE)
+	}
+	if (player_keys[GLFW_KEY_S] != GLFW_RELEASE) {
 		transform.Position -= speed * orientation.Front;
-	if (player_keys[GLFW_KEY_A] != GLFW_RELEASE)
+	}
+	if (player_keys[GLFW_KEY_A] != GLFW_RELEASE) {
 		transform.Position -= speed * orientation.Right;
-	if (player_keys[GLFW_KEY_D] != GLFW_RELEASE)
+	}
+	if (player_keys[GLFW_KEY_D] != GLFW_RELEASE) {
 		transform.Position += speed * orientation.Right;
+	}
 }
 
 void camera_look(const Input::MouseState& mouse) {
@@ -46,17 +50,17 @@ void camera_look(const Input::MouseState& mouse) {
 	double pitchOff = -mouse.deltaY() * sensitivity;
 	camera.Yaw += yawOff;
 	camera.Pitch += pitchOff;
-	if (camera.Pitch > 89.0f)
+	if (camera.Pitch > 89.0f) {
 		camera.Pitch = 89.0f;
-	if (camera.Pitch < -89.0f)
+	}
+	if (camera.Pitch < -89.0f) {
 		camera.Pitch = -89.0f;
+	}
 
 	camera.update(orientation);
 }
 
-RenderSystem::RenderSystem() : mShader(resourceManager->getShader("transform")), mSkybox() {
-
-}
+RenderSystem::RenderSystem() : m_shader(resourceManager->getShader("transform")), m_skybox(), m_render_bounding_boxes(false) {}
 
 void RenderSystem::init() {
 	mCamera = gCoordinator.createEntity();
@@ -82,30 +86,38 @@ void RenderSystem::init() {
 	gameWindow->getKeyboardManager().subscribe(&camera_movement, {GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D });
 	gameWindow->getMouseManager().subscribe(&camera_look);
 
-	mShader.use();
-	mShader.set_int("texture1", 0);
-	mShader.set_vec3("lightPos", glm::vec3(0.0f, 0.0f, 0.0f));
-	mShader.set_vec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+	m_shader.use();
+	m_shader.set_int("texture1", 0);
+	m_shader.set_vec3("lightPos", glm::vec3(0.0f, 0.0f, 0.0f));
+	m_shader.set_vec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 }
 
 void RenderSystem::update(float deltaTime) {
+
+	/* if there are no entities, then just exit. Don't waste our time */
+	if (m_entities.empty()) {
+		return;
+	}
 	auto const& camera = gCoordinator.getComponent<Components::Camera>(mCamera);
 	auto const& camera_transform = gCoordinator.getComponent<Components::Transform>(mCamera);
 	auto & camera_orientation = gCoordinator.getComponent<Components::Orientation>(mCamera);
 	auto const& view = camera.getView(camera_orientation, camera_transform);
 
-	mSkybox.onProjectionUpdate(camera.Projection);
-	mSkybox.draw(glm::mat3(view));
+	m_skybox.onProjectionUpdate(camera.Projection);
+	m_skybox.draw(glm::mat3(view));
 	camera.update(camera_orientation);
+
 	update_camera_movement();
 
-	mShader.use();
-	mShader.set_mat4("view", view);
-	mShader.set_mat4("projection", camera.Projection);
-	for (Entity entity : mEntities) {
+	m_shader.use();
+	m_shader.set_mat4("view", view);
+	m_shader.set_mat4("projection", camera.Projection);
+
+	for (Entity entity : m_entities) {
 		auto const& appearance = gCoordinator.getComponent<Components::Appearence>(entity);
 		auto const& transform = gCoordinator.getComponent<Components::Transform>(entity);
 		auto const& shape = gCoordinator.getComponent<Components::RenderShape>(entity);
+		auto const& body = gCoordinator.getComponent<Components::RigidBody>(entity);
 
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, transform.Position);
@@ -115,12 +127,33 @@ void RenderSystem::update(float deltaTime) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, appearance.Texture);
 		
-		mShader.use();
-		mShader.set_mat4("model", model);
-		mShader.set_vec3("viewPos", camera_transform.Position);
-		mShader.set_vec3("baseColor", appearance.BaseColor);
-		mShader.set_float("opacity", appearance.Opacity);
+		m_shader.use();
+		m_shader.set_mat4("model", model);
+		m_shader.set_vec3("viewPos", camera_transform.Position);
+		m_shader.set_vec3("baseColor", appearance.BaseColor);
+		m_shader.set_float("opacity", appearance.Opacity);
 
 		shape.Shape->draw();
+		
+		// draw bounding boxes
+		const glm::vec3 bbColor = body.Box.overlapping ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(1.0f);
+		m_shader.set_vec3("baseColor", bbColor);
+		glm::vec3 diff = body.Box.max - body.Box.min;
+		model = glm::scale(model, diff);
+		m_shader.set_mat4("model", model);
+		if (m_render_bounding_boxes && shape.BoxShape) {
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, resourceManager->getTexture("white"));
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glLineWidth(5);
+			shape.BoxShape->draw();
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glLineWidth(1);
+		}
 	}
+}
+
+void RenderSystem::toggleBoxRendering() {
+	m_render_bounding_boxes = !m_render_bounding_boxes;
+	std::cout << (m_render_bounding_boxes ? "Render boxes: ON" : "Render boxes: OFF") << '\n';
 }

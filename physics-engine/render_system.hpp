@@ -11,8 +11,11 @@ namespace Systems {
 		RenderSystem();
 		void init();
 		void update(float deltaTime) override;
+		void renderBoundingBoxes(float dt);
+		void toggleBoxRendering();
 	private:
-		Shader& mShader;
-		Skybox mSkybox;
+		Shader& m_shader;
+		Skybox m_skybox;
+		bool m_render_bounding_boxes;
 	};
 }

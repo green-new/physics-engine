@@ -35,12 +35,12 @@ GeometryResources::GeometryResources() {
 	Geometry::vertex v5 = { .position = glm::vec3(-0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
 	Geometry::vertex v6 = { .position = glm::vec3(0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
 	Geometry::vertex v7 = { .position = glm::vec3(0.5f, -0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	auto cube = Geometry::ProceduralBuilder().addQuad({v0, v2, v3, v1})
-		.addQuad({ v1, v0, v4, v7 })
-		.addQuad({ v7, v1, v3, v6 })
-		.addQuad({ v6, v7, v4, v5 })
-		.addQuad({ v5, v6, v3, v2 })
-		.addQuad({ v2, v5, v4, v0 })
+	auto cube = Geometry::ProceduralBuilder().addQuad({v0, v1, v2, v4})
+		.addQuad({ v0, v1, v7, v3 })
+		.addQuad({ v3, v7, v6, v5 })
+		.addQuad({ v2, v6, v5, v4 })
+		.addQuad({ v0, v3, v5, v4 })
+		.addQuad({ v1, v2, v6, v7 })
 		.build();
 
 	add("cube", *cube.get());
@@ -154,6 +154,7 @@ TextureResources::TextureResources() {
 	add("red", solid_colored_texture(RED));
 	add("green", solid_colored_texture(GREEN));
 	add("blue", solid_colored_texture(BLUE));
+	add("white", solid_colored_texture(WHITE));
 	add("yellow", solid_colored_texture(YELLOW));
 	add("xor_red", xor_texture(RED, 256, 256));
 	add("xor_green", xor_texture(GREEN, 256, 256));

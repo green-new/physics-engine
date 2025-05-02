@@ -1,5 +1,6 @@
 #include "entity_manager.hpp"
 #include <assert.h>
+#include <iostream>
 
 EntityManager::EntityManager() {
 	this->mEntityCount = 0;
@@ -19,8 +20,8 @@ Entity EntityManager::createEntity() {
 	return new_entity;
 }
 void EntityManager::deleteEntity(Entity entity) {
-	assert(mEntityCount < MAX_ENTITIES && "[ECS] Error creating entity: out of space");
-	assert(entity < MAX_ENTITIES && "[ECS] Error creating entity: invalid entity ID");
+	assert(mEntityCount < MAX_ENTITIES && "[ECS] Error deleting entity: out of space");
+	assert(entity < MAX_ENTITIES && "[ECS] Error deleting entity: invalid entity ID");
 
 	mEntitySignatures[entity].reset();
 	mUnusedIDs.push(entity);
