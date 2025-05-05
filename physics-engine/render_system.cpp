@@ -60,7 +60,7 @@ void camera_look(const Input::MouseState& mouse) {
 	camera.update(orientation);
 }
 
-RenderSystem::RenderSystem() : m_shader(resourceManager->getShader("transform")), m_skybox(), m_render_bounding_boxes(false) {}
+RenderSystem::RenderSystem() : m_shader(resourceManager->getShader("transform")), m_skybox(), m_plane(), m_render_bounding_boxes(false) {}
 
 void RenderSystem::init() {
 	mCamera = gCoordinator.createEntity();
@@ -94,10 +94,9 @@ void RenderSystem::init() {
 
 void RenderSystem::update(float deltaTime) {
 
-	/* if there are no entities, then just exit. Don't waste our time */
-	if (m_entities.empty()) {
-		return;
-	}
+	/* Draw the world plane */
+	
+
 	auto const& camera = gCoordinator.getComponent<Components::Camera>(mCamera);
 	auto const& camera_transform = gCoordinator.getComponent<Components::Transform>(mCamera);
 	auto & camera_orientation = gCoordinator.getComponent<Components::Orientation>(mCamera);
@@ -112,6 +111,10 @@ void RenderSystem::update(float deltaTime) {
 	m_shader.use();
 	m_shader.set_mat4("view", view);
 	m_shader.set_mat4("projection", camera.Projection);
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::scale(model, glm::vec3(20.0f, 20.0f, 20.0f));
+	m_shader.set_mat4("model", model);
+	m_plane.draw();
 
 	for (Entity entity : m_entities) {
 		auto const& appearance = gCoordinator.getComponent<Components::Appearence>(entity);
@@ -121,7 +124,7 @@ void RenderSystem::update(float deltaTime) {
 
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, transform.Position);
-		model = glm::scale(model, transform.Scale);
+		// model = glm::scale(model, transform.Scale);
 		// model = glm::rotate(model, transform.RotationAngle, transform.Rotation);
 
 		glActiveTexture(GL_TEXTURE0);
@@ -138,14 +141,13 @@ void RenderSystem::update(float deltaTime) {
 		// draw bounding boxes
 		const glm::vec3 bbColor = body.Box.overlapping ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(1.0f);
 		m_shader.set_vec3("baseColor", bbColor);
-		glm::vec3 diff = body.Box.max - body.Box.min;
-		model = glm::scale(model, diff);
+		model = glm::scale(model, glm::vec3{ body.Mass });
 		m_shader.set_mat4("model", model);
 		if (m_render_bounding_boxes && shape.BoxShape) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, resourceManager->getTexture("white"));
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glLineWidth(5);
+			glLineWidth(2);
 			shape.BoxShape->draw();
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glLineWidth(1);

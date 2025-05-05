@@ -2,15 +2,17 @@
 #include "box.hpp"
 
 struct Plane {
-	glm::vec3 m_center{};
-	glm::vec3 m_rotation{};
+	
+	float dist;
 
+	glm::vec3 m_normal{};
 
-	Plane() = default;
+	Plane(float dist = 0.0f, glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f)) : dist(dist), m_normal(normal) {}
+
+	Plane(const Plane& plane) : dist(plane.dist), m_normal(plane.m_normal) {}
+
 	~Plane() = default;
 
-	Plane(const Plane& plane) : m_center(plane.m_center), m_rotation(plane.m_rotation) {}
-
 	bool intersects(glm::vec3 pointA, glm::vec3 pointB);
-	bool intersects(const BoundingBox& box);
+	bool intersects(const BoundingBox& box, const glm::vec3 position);
 };

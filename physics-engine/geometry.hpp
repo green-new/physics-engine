@@ -15,8 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-/* Triangulation is a relatively expensive operation.
-For procedurally generated geometry, a face can only have 12 sides. */
+/* For procedurally generated geometry, a face can only have 12 sides. */
 #define GEOLIB_MAX_POLYGON_SIDES	12
 
 namespace Geometry {
@@ -28,7 +27,7 @@ namespace Geometry {
 
 	struct face {
 		glm::ivec3 indices;
-		glm::vec3 flatNormal;
+		glm::vec3 normal;
 	};
 
 	class Geometry3D {
@@ -97,11 +96,9 @@ namespace Geometry {
 
 	/* For use with the adapter strategy. */
 	struct GLData {
-		std::vector<GLfloat> smoothVertices;
-		std::vector<GLfloat> smoothNormals;
-		std::vector<GLfloat> flatVertices;
-		std::vector<GLfloat> flatNormals;
-		std::vector<GLfloat> textureData;
+		std::vector<GLfloat> vertices;
+		std::vector<GLfloat> normals;
+		std::vector<GLfloat> textures;
 	};
 	class GLDataAdapter {
 	public:

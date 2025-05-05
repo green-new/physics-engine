@@ -28,13 +28,13 @@ GeometryResources::GeometryResources() {
 
 	// Procedural generation.
 	Geometry::vertex v0 = { .position = glm::vec3(-0.5f, -0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f)};
-	Geometry::vertex v1 = { .position = glm::vec3(0.5f, -0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	Geometry::vertex v2 = { .position = glm::vec3(0.5f, 0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	Geometry::vertex v3 = { .position = glm::vec3(-0.5f, -0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	Geometry::vertex v4 = { .position = glm::vec3(-0.5f, 0.5f, -0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	Geometry::vertex v5 = { .position = glm::vec3(-0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	Geometry::vertex v6 = { .position = glm::vec3(0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
-	Geometry::vertex v7 = { .position = glm::vec3(0.5f, -0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v1 = { .position = glm::vec3(0.5f, -0.5f, -0.5f), .normal = glm::vec3(0.5f, -0.5f, -0.5f), .texture = glm::vec2(0.0f, 1.0f) };
+	Geometry::vertex v2 = { .position = glm::vec3(0.5f, 0.5f, -0.5f), .normal = glm::vec3(0.5f, 0.5f, -0.5f), .texture = glm::vec2(1.0f, 0.0f) };
+	Geometry::vertex v3 = { .position = glm::vec3(-0.5f, -0.5f, 0.5f), .normal = glm::vec3(-0.5f, -0.5f, 0.5f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex v4 = { .position = glm::vec3(-0.5f, 0.5f, -0.5f), .normal = glm::vec3(-0.5f, 0.5f, -0.5f), .texture = glm::vec2(1.0f, 1.0f) };
+	Geometry::vertex v5 = { .position = glm::vec3(-0.5f, 0.5f, 0.5f), .normal = glm::vec3(-0.5f, 0.5f, 0.5f), .texture = glm::vec2(0.0f, 1.0f) };
+	Geometry::vertex v6 = { .position = glm::vec3(0.5f, 0.5f, 0.5f), .normal = glm::vec3(0.5f, 0.5f, 0.5f), .texture = glm::vec2(1.0f, 0.0f) };
+	Geometry::vertex v7 = { .position = glm::vec3(0.5f, -0.5f, 0.5f), .normal = glm::vec3(0.5f, -0.5f, 0.5f), .texture = glm::vec2(1.0f, 1.0f) };
 	auto cube = Geometry::ProceduralBuilder().addQuad({v0, v1, v2, v4})
 		.addQuad({ v0, v1, v7, v3 })
 		.addQuad({ v3, v7, v6, v5 })
@@ -51,8 +51,8 @@ GeometryResources::GeometryResources() {
 	// z = z0 + r * cos(A)
 	// where r > 0, A = theta[0, pi] and P = phi[0, 2pi]
 	Geometry::ProceduralBuilder sphereGen;
-	unsigned int Us = 64;
-	unsigned int Vs = 64;
+	unsigned int Us = 10;
+	unsigned int Vs = 10;
 	float pi = std::numbers::pi_v<float>;
 	float x0, y0, z0,
 		x1, y1, z1,
@@ -83,10 +83,10 @@ GeometryResources::GeometryResources() {
 			x3 = sinf(theta1) * cosf(phi1);
 			y3 = sinf(theta1) * sinf(phi1);
 			z3 = cosf(theta1);
-			Geometry::vertex v0 = Geometry::vertex{ .position = glm::vec3(x0, y0, z0), .normal = glm::vec3(x0, y0, z0), .texture = glm::vec2(theta0, phi0) };
-			Geometry::vertex v1 = Geometry::vertex{ .position = glm::vec3(x1, y1, z1), .normal = glm::vec3(x1, y1, z1), .texture = glm::vec2(theta0, phi1) };
-			Geometry::vertex v2 = Geometry::vertex{ .position = glm::vec3(x2, y2, z2), .normal = glm::vec3(x2, y2, z2), .texture = glm::vec2(theta1, phi0) };
-			Geometry::vertex v3 = Geometry::vertex{ .position = glm::vec3(x3, y3, z3), .normal = glm::vec3(x3, y3, z3), .texture = glm::vec2(theta1, phi1) };
+			Geometry::vertex v0 = Geometry::vertex{ .position = glm::vec3(x0, y0, z0), .normal = glm::vec3(x0, y0, z0), .texture = glm::vec2(cos(theta0), sin(phi0)) };
+			Geometry::vertex v1 = Geometry::vertex{ .position = glm::vec3(x1, y1, z1), .normal = glm::vec3(x1, y1, z1), .texture = glm::vec2(cos(theta0), sin(phi1)) };
+			Geometry::vertex v2 = Geometry::vertex{ .position = glm::vec3(x2, y2, z2), .normal = glm::vec3(x2, y2, z2), .texture = glm::vec2(cos(theta1), sin(phi0)) };
+			Geometry::vertex v3 = Geometry::vertex{ .position = glm::vec3(x3, y3, z3), .normal = glm::vec3(x3, y3, z3), .texture = glm::vec2(cos(theta1), sin(phi1)) };
 
 			if (u > 0 && u < Us - 1) {
 				sphereGen.addQuad({ v0, v2, v3, v1});

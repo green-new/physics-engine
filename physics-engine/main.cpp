@@ -18,6 +18,7 @@
 #include "resource.hpp"
 #include "input_manager.hpp"
 #include "box.hpp"
+#include "plane.hpp"
 
 extern Entity mCamera;
 
@@ -35,6 +36,9 @@ GLenum polygonMode = GL_FILL;
 std::unique_ptr<Window> gameWindow;
 std::unique_ptr<Resources::ResourceManager> resourceManager;
 Coordinator gCoordinator;
+
+// create world plane
+Plane worldPlane = Plane();
 
 void main_input(const int key, const int scancode, const int action, const int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -92,18 +96,21 @@ void destroy() {
 }
 
 void run() {
-    const float PHYS_FREQ = 1000.0f; // 1000 Hz
-    const float RENDER_FREQ = 1000.0f;  // 500 Hz
 
-    double      deltaTime = 0.0f,
-                prevTime = glfwGetTime(),
-                currTime = 0.0f,
-                physTime = 0.0f,
-                renderTime = 0.0f,
-                fpsTime = 0.0f;
+    // frequency is in hertz
 
-    bool        renderTick = false, 
-                physTick = false;
+    const float PHYS_FREQ = 100.0f;
+    const float RENDER_FREQ = 500.0f;
+
+    double deltaTime = 0.0f,
+        prevTime = glfwGetTime(),
+        currTime = 0.0f,
+        physTime = 0.0f,
+        renderTime = 0.0f,
+        fpsTime = 0.0f;
+
+    bool renderTick = false, 
+        physTick = false;
     unsigned int frames = 0;
 
     auto physicsSystem = gCoordinator.registerSystem<Systems::PhysicsSystem>();
@@ -126,21 +133,28 @@ void run() {
     physicsSystem->init();
     renderSystem->init();
 
+    const BoundingBox staticBox = BoundingBox(glm::vec3{ -0.5f, -0.5f, -0.5f }, glm::vec3{ 0.5f, 0.5f, 0.5f });
+
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> x_dist(-20.0f, 20.0f);
-    std::uniform_real_distribution<> y_dist(-20.0f, 20.0f);
-    std::uniform_real_distribution<> z_dist(-20.0f, 20.0f);
+    std::uniform_real_distribution<> x_dist(-10.0f, 10.0f);
+    std::uniform_real_distribution<> y_dist(-10.0f, 10.0f);
+    std::uniform_real_distribution<> z_dist(-10.0f, 10.0f);
     std::uniform_real_distribution<float> zero_to_one(0.0f, 1.0f);
     std::uniform_real_distribution<float> one_to_100(0.5f, 1.0f);
-    std::uniform_real_distribution<float> neg_to_pos(-100.0f, 100.0f);
+    std::uniform_real_distribution<float> neg_to_pos(-1.0f, 1.0f);
     std::uniform_int_distribution<> shape_dist(0, 3);
 
     std::shared_ptr<Components::RenderShape> shape = std::make_shared<Components::RenderShape>(Components::RenderShape{
         .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("sphere")).requestData()),
         .BoxShape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("cube")).requestData())
         });
-    for (uint32_t i = 0; i < 100; i++) {
+
+    std::shared_ptr<Components::RenderShape> cube = std::make_shared<Components::RenderShape>(Components::RenderShape{
+        .Shape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("cube")).requestData()),
+        .BoxShape = new Mesh3D(GLDataAdapter(resourceManager->getGeometry("cube")).requestData())
+        });
+    for (uint32_t i = 0; i < 250; i++) {
         Entity entity = gCoordinator.createEntity();
         const float mass = one_to_100(gen);
         gCoordinator.addComponent(entity, Components::Transform{
@@ -161,15 +175,17 @@ void run() {
             .BaseColor = glm::vec3(zero_to_one(gen), zero_to_one(gen), zero_to_one(gen))
             });
         gCoordinator.addComponent(entity, Components::RigidBody{
-            .Box = BoundingBox(glm::vec3 {-mass}, glm::vec3 {mass}),
+            .Box = staticBox,
             .Shape = resourceManager->getGeometry("cube"),
             .Anchored = false,
             .onGround = false,
             .Mass = mass,
+            .Restitution = 1.0f,
             .Velocity = glm::vec3(0.0f),
             .Force = glm::vec3(neg_to_pos(gen), neg_to_pos(gen), neg_to_pos(gen)),
             });
     }
+
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(gameWindow->getHandle())) {
@@ -179,24 +195,20 @@ void run() {
         deltaTime = currTime - prevTime;
 
         /* Physics update */
-        physTick = (currTime - physTime > (1.0f / PHYS_FREQ));
+        physTick = ((currTime - physTime) > (1.0f / PHYS_FREQ));
         if (physTick) {
+            physicsSystem->update((float)(currTime - physTime));
             physTime = currTime;
-
-            physicsSystem->update((float)deltaTime);
-
-            /* Poll for and process events */
-            // glfwPollEvents();
         }
         /* Render update */
-        renderTick = (currTime - renderTime > (1.0f / RENDER_FREQ));
+        renderTick = ((currTime - renderTime) > (1.0f / RENDER_FREQ));
         if (renderTick) {
-            renderTime = currTime;
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            
-            renderSystem->update((float)deltaTime);
+
+            renderSystem->update((float)(currTime - renderTime));
 
             glfwSwapBuffers(gameWindow->getHandle());
+            renderTime = currTime;
         }
 
         /* FPS counter */
@@ -248,7 +260,7 @@ void run() {
 
             Entity entity = gCoordinator.createEntity();
             const float mass = one_to_100(gen);
-            const glm::vec3 force = gCoordinator.getComponent<Components::Orientation>(mCamera).Front * 1000.0f;
+            const glm::vec3 force = gCoordinator.getComponent<Components::Orientation>(mCamera).Front * 100.0f;
             gCoordinator.addComponent(entity, Components::Transform{
                 .Position = gCoordinator.getComponent<Components::Transform>(mCamera).Position + gCoordinator.getComponent<Components::Orientation>(mCamera).Front * 2.5f,
                 .Rotation = glm::vec3(0.0f),
@@ -267,10 +279,11 @@ void run() {
                 .BaseColor = glm::vec3(zero_to_one(gen), zero_to_one(gen), zero_to_one(gen))
                 });
             gCoordinator.addComponent(entity, Components::RigidBody{
-                .Box = BoundingBox(glm::vec3 {-mass}, glm::vec3 {mass}),
+                .Box = staticBox,
                 .Shape = resourceManager->getGeometry("sphere"),
                 .Anchored = false,
                 .Mass = mass,
+                .Restitution = 1.0f,
                 .Velocity = glm::vec3(0.0f),
                 .Force = force,
                 });

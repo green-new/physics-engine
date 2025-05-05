@@ -141,6 +141,7 @@
     <ClCompile Include="box.cpp" />
     <ClCompile Include="coordinator.cpp" />
     <ClCompile Include="entity_manager.cpp" />
+    <ClCompile Include="finite_plane.cpp" />
     <ClCompile Include="geometry.cpp" />
     <ClCompile Include="gjk.cpp" />
     <ClCompile Include="glad.c" />
@@ -153,6 +154,7 @@
     <ClCompile Include="octree.cpp" />
     <ClCompile Include="physics_system.cpp" />
     <ClCompile Include="plane.cpp" />
+    <ClCompile Include="render_box.cpp" />
     <ClCompile Include="render_system.cpp" />
     <ClCompile Include="resource.cpp" />
     <ClCompile Include="shader.cpp" />
@@ -174,6 +176,7 @@
     <ClInclude Include="coordinator.hpp" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="entity_manager.hpp" />
+    <ClInclude Include="finite_plane.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="gjk.hpp" />
     <ClInclude Include="input_manager.hpp" />
@@ -187,6 +190,7 @@
     <ClInclude Include="octree.hpp" />
     <ClInclude Include="orientation.hpp" />
     <ClInclude Include="physics_system.hpp" />
+    <ClInclude Include="render_box.hpp" />
     <ClInclude Include="render_system.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource.hpp" />

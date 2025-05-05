@@ -81,7 +81,7 @@ namespace Geometry {
 		glm::vec3 normal = glm::cross(Bp - Ap, Cp - Ap);
 		normal = glm::normalize(normal);
 
-		Geometry::face tempFace = { .indices = glm::ivec3(idx0, idx1, idx2), .flatNormal = normal };
+		Geometry::face tempFace = { .indices = glm::ivec3(idx0, idx1, idx2), .normal = normal };
 
 		addFace(tempFace);
 
@@ -123,60 +123,41 @@ namespace Geometry {
 		return *this;
 	}
 
-	GLDataAdapter::GLDataAdapter(Geometry3D& adaptee) : geometryData(adaptee) {
-	}
-	/* Gets the GL appropriate data from the current geometry context.
-	We have to loop through the faces, not the vertices, because the faces 
-	contain the correct order for which the vertices are drawn.
-	This is important because we have no EBO (index buffer) implementation due to its complexity with 
-	changing vertex size and normal size when swapping from flat and smooth normals. */
+	GLDataAdapter::GLDataAdapter(Geometry3D& adaptee) : geometryData(adaptee) { }
+
 	GLData GLDataAdapter::requestData() {
 		GLData g;
 		for (auto& f : geometryData.getFaces()) {
 			vertex& A = geometryData.getVertex(f.indices.x);
 			vertex& B = geometryData.getVertex(f.indices.y);
 			vertex& C = geometryData.getVertex(f.indices.z);
-			g.smoothVertices.push_back(A.position.x);
-			g.smoothVertices.push_back(A.position.y);
-			g.smoothVertices.push_back(A.position.z);
-			g.smoothVertices.push_back(B.position.x);
-			g.smoothVertices.push_back(B.position.y);
-			g.smoothVertices.push_back(B.position.z);
-			g.smoothVertices.push_back(C.position.x);
-			g.smoothVertices.push_back(C.position.y);
-			g.smoothVertices.push_back(C.position.z);
-			g.smoothVertices.push_back(A.normal.x);
-			g.smoothNormals.push_back(A.normal.y);
-			g.smoothNormals.push_back(A.normal.z);
-			g.smoothNormals.push_back(B.normal.x);
-			g.smoothNormals.push_back(B.normal.y);
-			g.smoothNormals.push_back(B.normal.z);
-			g.smoothNormals.push_back(C.normal.x);
-			g.smoothNormals.push_back(C.normal.y);
-			g.smoothNormals.push_back(C.normal.z);
-		}
-		for (const auto& f : geometryData.getFaces()) {
-			vertex& A = geometryData.getVertex(f.indices.x);
-			vertex& B = geometryData.getVertex(f.indices.y);
-			vertex& C = geometryData.getVertex(f.indices.z);
-			g.flatNormals.push_back(f.flatNormal.x);
-			g.flatNormals.push_back(f.flatNormal.y);
-			g.flatNormals.push_back(f.flatNormal.z);
-			g.flatNormals.push_back(f.flatNormal.x);
-			g.flatNormals.push_back(f.flatNormal.y);
-			g.flatNormals.push_back(f.flatNormal.z);
-			g.flatNormals.push_back(f.flatNormal.x);
-			g.flatNormals.push_back(f.flatNormal.y);
-			g.flatNormals.push_back(f.flatNormal.z);
-			g.flatVertices.push_back(A.position.x);
-			g.flatVertices.push_back(A.position.y);
-			g.flatVertices.push_back(A.position.z);
-			g.flatVertices.push_back(B.position.x);
-			g.flatVertices.push_back(B.position.y);
-			g.flatVertices.push_back(B.position.z);
-			g.flatVertices.push_back(C.position.x);
-			g.flatVertices.push_back(C.position.y);
-			g.flatVertices.push_back(C.position.z);
+
+			g.vertices.push_back(A.position.x);
+			g.vertices.push_back(A.position.y);
+			g.vertices.push_back(A.position.z);
+			g.vertices.push_back(B.position.x);
+			g.vertices.push_back(B.position.y);
+			g.vertices.push_back(B.position.z);
+			g.vertices.push_back(C.position.x);
+			g.vertices.push_back(C.position.y);
+			g.vertices.push_back(C.position.z);
+
+			g.normals.push_back(A.normal.x);
+			g.normals.push_back(A.normal.y);
+			g.normals.push_back(A.normal.z);
+			g.normals.push_back(B.normal.x);
+			g.normals.push_back(B.normal.y);
+			g.normals.push_back(B.normal.z);
+			g.normals.push_back(C.normal.x);
+			g.normals.push_back(C.normal.y);
+			g.normals.push_back(C.normal.z);
+
+			g.textures.push_back(A.texture.x);
+			g.textures.push_back(A.texture.y);
+			g.textures.push_back(B.texture.x);
+			g.textures.push_back(B.texture.y);
+			g.textures.push_back(C.texture.x);
+			g.textures.push_back(C.texture.y);
 		}
 
 		return g;

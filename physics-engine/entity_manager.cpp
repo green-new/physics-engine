@@ -17,6 +17,8 @@ Entity EntityManager::createEntity() {
 
 	++mEntityCount;
 
+	std::cout << "Created entity: " << new_entity << '\n';
+
 	return new_entity;
 }
 void EntityManager::deleteEntity(Entity entity) {
@@ -27,6 +29,8 @@ void EntityManager::deleteEntity(Entity entity) {
 	mUnusedIDs.push(entity);
 
 	--mEntityCount;
+
+	std::cout << "Entities left: " << mEntityCount << '\n';
 }
 void EntityManager::setSignature(Entity entity, Signature signature) {
 	assert(mEntityCount < MAX_ENTITIES && "[ECS] Error setting signature: out of space");
