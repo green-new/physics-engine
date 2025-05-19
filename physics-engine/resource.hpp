@@ -11,6 +11,8 @@ namespace Resources {
 	template<class T>
 	class Resource {
 	public:
+		virtual void init() = 0;
+	public:
 		T& get(const std::string& uri) const {
 			if (_map.contains(uri))
 				return *_map.at(uri).get();
@@ -37,20 +39,26 @@ namespace Resources {
 
 	class GeometryResources : public Resource<Geometry::Geometry3D> {
 	public:
-		GeometryResources();
+		GeometryResources() = default;
 		~GeometryResources() = default;
+	public:
+		virtual void init();
 	};
 
 	class ShaderResources : public Resource<Shader> {
 	public:
-		ShaderResources();
+		ShaderResources() = default;
 		~ShaderResources() = default;
+	public:
+		virtual void init();
 	};
 
 	class TextureResources : public Resource<texture_t> {
 	public:
-		TextureResources();
+		TextureResources() = default;
 		~TextureResources();
+	public:
+		virtual void init();
 	};
 
 	// This is the one point of access to all resources for this application.
@@ -62,7 +70,13 @@ namespace Resources {
 	// However, static isn't thread safe without mutexes.
 	class ResourceManager final {
 	public:
+		ResourceManager()
+			: Textures(std::make_unique<TextureResources>()),
+			Geometries(std::make_unique<GeometryResources>()),
+			Shaders(std::make_unique<ShaderResources>()) {}
+	public:
 		void init();
+
 		texture_t& getTexture(std::string name);
 		Geometry::Geometry3D& getGeometry(std::string name);
 		Shader& getShader(std::string name);

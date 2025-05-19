@@ -1,38 +1,42 @@
 #include "skybox.hpp"
+#include "geometry.hpp"
 
-extern std::unique_ptr<Resources::ResourceManager> resourceManager;
-
-Skybox::Skybox() : mSkyboxShader(resourceManager->getShader("skybox")) {
-	mProjectionMatrix = glm::mat4(1.0f);
-	mSkyboxTexture = resourceManager->getTexture("skybox");
-	mVao = 0;
-	mVbo = 0;
-	init();
-}
 void Skybox::init() {
-	mSkyboxShader.set_int("skybox", 0);
-	glGenVertexArrays(1, &mVao);
-	glGenBuffers(1, &mVbo);
-	glBindVertexArray(mVao);
-	glBindBuffer(GL_ARRAY_BUFFER, mVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+
+	auto shader = m_resourceManager.getShader("skybox");
+	auto shape = m_resourceManager.getGeometry("skybox");
+
+	shader.set_int("skybox", 0);
+	glGenVertexArrays(1, &m_vao);
+	glGenBuffers(1, &m_vbo);
+	glBindVertexArray(m_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+	glBufferData(
+		GL_ARRAY_BUFFER, 
+		sizeof(skyboxVertices),
+		&skyboxVertices,
+		GL_STATIC_DRAW
+	);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 	glBindVertexArray(0);
 }
-void Skybox::onProjectionUpdate(glm::mat4 newProjection) {
-	mProjectionMatrix = newProjection;
-}
-void Skybox::draw(glm::mat3 view) {
+
+void Skybox::draw(glm::mat3 view, glm::mat4 projection) {
 	glDepthMask(GL_FALSE);
 
-	mSkyboxShader.use();
-	mSkyboxShader.set_mat4("projection", mProjectionMatrix);
+	auto shader = m_resourceManager.getShader("skybox");
+	auto tex = m_resourceManager.getTexture("skybox");
+
+	shader.use();
+	shader.set_mat4("projection", projection);
+
 	// We only use the mat3 of the view. Remove the homogenous coordinate
-	mSkyboxShader.set_mat4("view", view);
-	glBindVertexArray(mVao);
+	shader.set_mat4("view", view);
+
+	glBindVertexArray(m_vao);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, mSkyboxTexture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	glDepthMask(GL_TRUE);

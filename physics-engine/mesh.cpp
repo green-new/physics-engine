@@ -1,7 +1,7 @@
 #include "mesh.hpp"
 Mesh3D::Mesh3D(GLData glData) {
 	mGLData = glData;
-	glGenVertexArrays(1, &mVertexArray);
+	glad_glGenVertexArrays(1, &mVertexArray);
 	glGenBuffers(1, &mVertexData);
 	glGenBuffers(1, &mNormalData);
 	glGenBuffers(1, &mTextureData);

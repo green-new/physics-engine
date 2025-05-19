@@ -132,6 +132,21 @@
     <ClCompile Include="finite_plane.cpp">
       <Filter>Source Files\physics</Filter>
     </ClCompile>
+    <ClCompile Include="engine.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="config.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="clock.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="physics_sim.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="render.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mesh.hpp">
@@ -250,6 +265,18 @@
     </ClInclude>
     <ClInclude Include="finite_plane.hpp">
       <Filter>Header Files\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="clock.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="config.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="render.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="physics_sim.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

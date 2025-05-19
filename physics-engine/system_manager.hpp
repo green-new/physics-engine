@@ -5,13 +5,13 @@
 
 class SystemManager {
 public:
-	template<class T>
-	std::shared_ptr<T> registerSystem() {
+	template<class T, typename... CtorArgs>
+	std::shared_ptr<T> registerSystem(CtorArgs&&... args) {
 		const char* tn = typeid(T).name();
 
 		assert(mSystems.find(tn) == mSystems.end() && "[ECS] Error registering system: already exists");
 
-		auto system = std::make_shared<T>();
+		auto system = std::make_shared<T>(std::forward<CtorArgs>(args)...);
 		mSystems.insert({ tn, system });
 		return system;
 	}

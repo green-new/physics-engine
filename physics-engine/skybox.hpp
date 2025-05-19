@@ -10,15 +10,15 @@ static const float skyboxVertices[] = { -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f
 
 class Skybox {
 public:
-    Skybox();
+    Skybox(Resources::ResourceManager& rm)
+        : m_vao(),
+        m_vbo(),
+        m_resourceManager(rm)
+    {}
     void init();
-    void onProjectionUpdate(glm::mat4 newProjection);
-    void draw(glm::mat3 view);
+    void draw(glm::mat3 view, glm::mat4 projection);
 private:
-    GLuint mVao;
-    GLuint mVbo;
-    texture_t mSkyboxTexture;
-    const Shader& mSkyboxShader;
-
-    glm::mat4 mProjectionMatrix;
+    GLuint m_vao{};
+    GLuint m_vbo{};
+    Resources::ResourceManager& m_resourceManager;
 };

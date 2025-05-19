@@ -5,7 +5,12 @@
 
 class Coordinator {
 public:
-	void init();
+	Coordinator()
+		:
+		mComponentManager(std::make_unique<ComponentManager>()),
+		mEntityManager(std::make_unique<EntityManager>()),
+		mSystemManager(std::make_unique<SystemManager>()) {}
+public:
 	Entity createEntity();
 	void destroyEntity(Entity entity);
 
@@ -31,9 +36,9 @@ public:
 	ComponentType getComponentType() {
 		return mComponentManager->getComponentType<T>();
 	}
-	template<class T>
-	std::shared_ptr<T> registerSystem() {
-		return mSystemManager->registerSystem<T>();
+	template<class T, typename... CtorArgs>
+	std::shared_ptr<T> registerSystem(CtorArgs&&... args) {
+		return mSystemManager->registerSystem<T>(std::forward<CtorArgs>(args)...);
 	}
 	template<class T>
 	void setSystemSignature(Signature signature) {

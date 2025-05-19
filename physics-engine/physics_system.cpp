@@ -8,12 +8,7 @@
 
 using namespace Systems;
 
-extern Coordinator gCoordinator;
-extern Plane worldPlane;
-
 void PhysicsSystem::init() {
-	m_gravity = true;
-
 }
 
 void PhysicsSystem::switchGravity() {
@@ -26,10 +21,10 @@ void PhysicsSystem::collision(Entity me, float deltaTime) {
 		if (other == me) {
 			continue;
 		}
-		auto& p = gCoordinator.getComponent<Components::Transform>(me);
-		auto& pBody = gCoordinator.getComponent<Components::RigidBody>(me);
-		auto& q = gCoordinator.getComponent<Components::Transform>(other);
-		auto& qBody = gCoordinator.getComponent<Components::RigidBody>(other);
+		auto& p = m_coordinator.getComponent<Components::Transform>(me);
+		auto& pBody = m_coordinator.getComponent<Components::RigidBody>(me);
+		auto& q = m_coordinator.getComponent<Components::Transform>(other);
+		auto& qBody = m_coordinator.getComponent<Components::RigidBody>(other);
 
 		BoundingBox qWorldBox = BoundingBox(qBody.Box, q.Position);
 		BoundingBox pWorldBox = BoundingBox(pBody.Box, p.Position);
@@ -103,7 +98,7 @@ void PhysicsSystem::update(float deltaTime) {
 
 	// handle removing entities before iteration
 	for (Entity entity : m_entitiesScheduledToRemove) {
-		gCoordinator.destroyEntity(entity);
+		m_coordinator.destroyEntity(entity);
 	}
 
 	// remove entities from schedule
@@ -114,8 +109,8 @@ void PhysicsSystem::update(float deltaTime) {
 
 
 	for (Entity entity : m_entities) {
-		auto& transform = gCoordinator.getComponent<Components::Transform>(entity);
-		auto& rigidBody = gCoordinator.getComponent<Components::RigidBody>(entity);
+		auto& transform = m_coordinator.getComponent<Components::Transform>(entity);
+		auto& rigidBody = m_coordinator.getComponent<Components::RigidBody>(entity);
 
 		// Perform movement stuff and make collision checks
 		if (!rigidBody.Anchored) {

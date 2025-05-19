@@ -139,7 +139,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="box.cpp" />
+    <ClCompile Include="clock.cpp" />
+    <ClCompile Include="config.cpp" />
     <ClCompile Include="coordinator.cpp" />
+    <ClCompile Include="engine.cpp" />
     <ClCompile Include="entity_manager.cpp" />
     <ClCompile Include="finite_plane.cpp" />
     <ClCompile Include="geometry.cpp" />
@@ -152,8 +155,10 @@
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="mouse_manager.cpp" />
     <ClCompile Include="octree.cpp" />
+    <ClCompile Include="physics_sim.cpp" />
     <ClCompile Include="physics_system.cpp" />
     <ClCompile Include="plane.cpp" />
+    <ClCompile Include="render.cpp" />
     <ClCompile Include="render_box.cpp" />
     <ClCompile Include="render_system.cpp" />
     <ClCompile Include="resource.cpp" />
@@ -170,9 +175,11 @@
     <ClInclude Include="bsp.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="camera_system.hpp" />
+    <ClInclude Include="clock.hpp" />
     <ClInclude Include="components.hpp" />
     <ClInclude Include="component_array.hpp" />
     <ClInclude Include="component_manager.hpp" />
+    <ClInclude Include="config.hpp" />
     <ClInclude Include="coordinator.hpp" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="entity_manager.hpp" />
@@ -183,6 +190,7 @@
     <ClInclude Include="keyboard_manager.hpp" />
     <ClInclude Include="key_subscription.hpp" />
     <ClInclude Include="line.hpp" />
+    <ClInclude Include="physics_sim.hpp" />
     <ClInclude Include="plane.hpp" />
     <ClInclude Include="point_light.hpp" />
     <ClInclude Include="mesh.hpp" />
@@ -190,6 +198,7 @@
     <ClInclude Include="octree.hpp" />
     <ClInclude Include="orientation.hpp" />
     <ClInclude Include="physics_system.hpp" />
+    <ClInclude Include="render.hpp" />
     <ClInclude Include="render_box.hpp" />
     <ClInclude Include="render_system.hpp" />
     <ClInclude Include="resource.h" />

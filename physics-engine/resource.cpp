@@ -4,7 +4,7 @@
 
 using namespace Resources;
 
-GeometryResources::GeometryResources() {
+void GeometryResources::init() {
 	// OBJ file loads.
 	std::cout << "[Registry] Generating geometries..." << std::endl;
 	//add("tetrahedron", Geometry::AssetGeometryBuilder()
@@ -43,7 +43,17 @@ GeometryResources::GeometryResources() {
 		.addQuad({ v1, v2, v6, v7 })
 		.build();
 
-	add("cube", *cube.get());
+	add("cube", *cube);
+
+	// plane model
+	Geometry::vertex plane_v01 = { .position = glm::vec3(-0.5f, 0.0f, -0.5f), .normal = glm::vec3(0.0f, 1.0f, 0.0f), .texture = glm::vec2(0.0f, 0.0f) };
+	Geometry::vertex plane_v02 = { .position = glm::vec3(-0.5f, 0.0f, 0.5f), .normal = glm::vec3(0.0f, 1.0f, 0.0f), .texture = glm::vec2(0.0f, 1.0f) };
+	Geometry::vertex plane_v03 = { .position = glm::vec3(0.5f, 0.0f, -0.5f), .normal = glm::vec3(0.0f, 1.0f, 0.0f), .texture = glm::vec2(1.0f, 0.0f) };
+	Geometry::vertex plane_v04 = { .position = glm::vec3(0.5f, 0.0f, 0.5f), .normal = glm::vec3(0.0f, 1.0f, 0.0f), .texture = glm::vec2(1.0f, 1.0f) };
+	auto plane = Geometry::ProceduralBuilder()
+		.addQuad({ plane_v01, plane_v02, plane_v03, plane_v04 })
+		.build();
+	add("plane", *plane);
 
 	// UV sphere algorithm
 	// x = x0 + r * sin(A) * cos(P)
@@ -99,8 +109,9 @@ GeometryResources::GeometryResources() {
 			}
 		}
 	}
-	add("sphere", *sphereGen.build().get());
+	add("sphere", *sphereGen.build());
 
+	// create terrain mesh using some perlin noise
 	Geometry::ProceduralBuilder terrain;
 	uint32_t seed = (uint32_t)time(NULL);
 	const siv::PerlinNoise perlin{ seed };
@@ -126,10 +137,19 @@ GeometryResources::GeometryResources() {
 		}
 	}
 
-	add("terrain", *terrain.build().get());
+	add("terrain", *terrain.build());
+
+	// generate skybox mesh
+	static const float skyboxVertices[] = { -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f,  -1.0f, -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f, 1.0f, -1.0f,  1.0f, 1.0f,  1.0f,  1.0f, 1.0f,  1.0f,  1.0f, 1.0f,  1.0f, -1.0f, 1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f, -1.0f,  1.0f,  1.0f, 1.0f,  1.0f,  1.0f, 1.0f,  1.0f,  1.0f, 1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  -1.0f,  1.0f, -1.0f, 1.0f,  1.0f, -1.0f, 1.0f,  1.0f,  1.0f, 1.0f,  1.0f,  1.0f, -1.0f,  1.0f,  1.0f, -1.0f,  1.0f, -1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, 1.0f, -1.0f,  1.0f };
+	Geometry::Geometry3D skybox = Geometry::Geometry3D();
+	for (unsigned int i = 0; i < sizeof(skyboxVertices) / sizeof(float); i += 3) {
+		skybox.getVertices().push_back(Geometry::vertex { .position = { skyboxVertices[i], skyboxVertices[i + 1], skyboxVertices[i + 2] } });
+	}
+
+	add("skybox", skybox);
 }
 
-ShaderResources::ShaderResources() {
+void ShaderResources::init() {
 	std::cout << "[Registry] Generating shaders..." << std::endl;
 	Shader VS_transform = Shader("shaders/VS_transform.glsl", "shaders/FS_transform.glsl");
 	add("transform", VS_transform);
@@ -137,7 +157,7 @@ ShaderResources::ShaderResources() {
 	add("skybox", skybox);
 }
 
-TextureResources::TextureResources() {
+void TextureResources::init() {
 	std::cout << "[Registry] Generating textures..." << std::endl;
 	// Procedural textures.
 	float freq = 8.0f;
@@ -166,6 +186,7 @@ TextureResources::TextureResources() {
 	// Texutres from file!
 	add("castle_walls_short.png", build_texture("textures/castle_walls_short.png"));
 }
+
 TextureResources:: ~TextureResources() {
 	for (const auto& it : _map) {
 		texture_t* t = it.second.get();
@@ -174,16 +195,19 @@ TextureResources:: ~TextureResources() {
 }
 
 void ResourceManager::init() {
-	Textures = std::make_unique<TextureResources>();
-	Geometries = std::make_unique<GeometryResources>();
-	Shaders = std::make_unique<ShaderResources>();
+	Textures->init();
+	Geometries->init();
+	Shaders->init();
 }
+
 texture_t& ResourceManager::getTexture(std::string name) {
 	return Textures->get(name);
 }
+
 Geometry::Geometry3D& ResourceManager::getGeometry(std::string name) {
 	return Geometries->get(name);
 }
+
 Shader& ResourceManager::getShader(std::string name) {
 	return Shaders->get(name);
 }

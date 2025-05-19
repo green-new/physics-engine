@@ -5,6 +5,7 @@
 #include "rigid_body.hpp"
 #include "shape.hpp"
 #include "transform.hpp"
+#include "point_light.hpp"
 
 namespace Components {}
 
